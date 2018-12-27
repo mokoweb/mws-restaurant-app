@@ -12,6 +12,7 @@
   margin-top: 6px;
   border: 1px solid #999;
   cursor: pointer;
+  font-size: 25px;
 
 }
 
@@ -23,8 +24,7 @@ button.fas.fa-heart:hover {
 button.fas.fa-heart.active {
     color: #ff0016;
     background-color: #252831;
-    font-size: : x-large;
-}
+  }
 
 
 
