@@ -65,7 +65,8 @@ self.addEventListener('fetch', event => {
 //If a call includes port 1337 then it’s a request for restaurant data from the database
   if (requestUrl.port === '1337') {
   	//If a call includes reviews then it’s a request for restaurant data from the database
-    if (request.url.includes('reviews')) {                    
+    
+    if (request.url.includes('reviews')) {                     
       let id = +requestUrl.searchParams.get('restaurant_id');  
       event.respondWith(idbReviewResponse(request, id));       
     } else {                                                   
@@ -76,6 +77,46 @@ self.addEventListener('fetch', event => {
     event.respondWith(cacheResponse(request));
   }
 });
+
+let j = 0;
+function idbRestaurantResponse(request, id) {
+  // 1. getAll records from objectStore
+  // 2. if more than 1 rec then return match
+  // 3. if no match then fetch json, write to idb, & return response
+
+  return  dbhelper.fetchRestaurantDataFromIDB()
+    .then(restaurants => {
+      if (restaurants.length) {
+        return restaurants;
+      }
+      return fetch(request)
+        .then(response => response.json())
+        .then(json => {
+          json.forEach(restaurant => {  // loop through json
+            console.log('fetching idb write', ++j, restaurant.id, restaurant.name);
+           
+   			 const store = tx.objectStore('restaurants');
+   			  const tx = db.transaction(store, 'readwrite');
+            set(store, restaurant) {
+			    return dbPromise.then(db => {
+			     
+			      tx.objectStore(store).put(restaurant);  // <- writes each record
+			      return tx.complete;
+			    });
+			  }
+            
+          });
+          return json;
+        });
+    })
+    .then(response => new Response(JSON.stringify(response)))
+    .catch(error => {
+      return new Response(error, {
+        status: 404,
+        statusText: 'my bad request'
+      });
+    });
+}
 
 
 self.addEventListener('fetch', e =>{
