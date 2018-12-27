@@ -54,6 +54,30 @@ self.addEventListener('activate', e =>{
 
 });
 
+
+
+// intercept all fetch requests
+// return cached data, idb data, or fetch from network
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  const requestUrl = new URL(request.url);
+  
+//If a call includes port 1337 then it’s a request for restaurant data from the database
+  if (requestUrl.port === '1337') {
+  	//If a call includes reviews then it’s a request for restaurant data from the database
+    if (request.url.includes('reviews')) {                    
+      let id = +requestUrl.searchParams.get('restaurant_id');  
+      event.respondWith(idbReviewResponse(request, id));       
+    } else {                                                   
+      event.respondWith(idbRestaurantResponse(request));
+    }
+  }
+  else {
+    event.respondWith(cacheResponse(request));
+  }
+});
+
+
 self.addEventListener('fetch', e =>{
 	console.log('[ServiceWorker] Fetch', e.request.url);
 
