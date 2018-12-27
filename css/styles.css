@@ -2,6 +2,32 @@
 [class*="fontawesome-"]:before {
   font-family: 'FontAwesome', sans-serif; }
 
+
+  button.fas.fa-heart {
+  background-color: white;
+  width: 44px;
+  height: 40px;
+  position: absolute;
+  align-self: flex-end;
+  margin-top: 6px;
+  border: 1px solid #999;
+  cursor: pointer;
+
+}
+
+button.fas.fa-heart:hover {
+  color: #fff;
+    background-color: #252831;
+}
+
+button.fas.fa-heart.active {
+    color: #ff0016;
+    background-color: #252831;
+    font-size: : x-large;
+}
+
+
+
 /* CSS Document */
 body,
 td,
