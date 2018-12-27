@@ -370,11 +370,24 @@ static OpenIndexDB(){
 
   let dbPromise = idb.open('restaurant-db', 1, (upgradeDb) =>{
       
-    let DbStore = upgradeDb.createObjectStore('restaurantDB', {
-      keyPath: 'id'
+     let DbStore = upgradeDb.createObjectStore('restaurantDB', {
+      keyPath: 'id', unique: true
     });
-    DbStore.createIndex("use-id", "id");
-  });
+
+const reviewStore = upgradeDb.createObjectStore('reviews', { keyPath: 'id' }, { autoIncrement: true });
+    
+     
+
+      upgradeDb.createObjectStore('offlineFavorites', { keyPath: 'restaurant_id' });
+
+      const offlineReviewStore = upgradeDb.createObjectStore('offlineReviews', {
+        keyPath: 'id',
+        autoIncrement: true,
+      });
+      offlineReviewStore.createIndex('restaurant_id', 'restaurant_id');
+      offlineReviewStore.createIndex('date', 'createdAt');
+    });
+ 
   return dbPromise;
 }
 
@@ -581,6 +594,23 @@ static createRestaurantReview(id, name, rating, comments, callback) {
     .catch(err => callback(err, null));
 }
   
+
+  //functions to mark and Unmark Favorite button
+  static setFavorite(id) {
+    //console.log('favorite restuarant ID:', id)
+  fetch(`${DBHelper.DATABASE_URL}/${id}/?is_favorite=true`, {
+    method: 'PUT'
+  });
+}
+
+
+// http://localhost:1337/restaurants/<restaurant_id>/?is_favorite=false
+static unSetFavorite(id) {
+   //console.log('favorite restuarant ID:' + id)
+  fetch(`${DBHelper.DATABASE_URL}/${id}/?is_favorite=false`, {
+    method: 'PUT'
+  });
+}
   /* static mapMarkerForRestaurant(restaurant, map) {
     const marker = new google.maps.Marker({
       position: restaurant.latlng,
