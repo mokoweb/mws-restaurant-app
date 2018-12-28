@@ -131,7 +131,7 @@ const favBtn = document.createElement('button');
     fillRestaurantHoursHTML();
   }
   // fill reviews
-  fillReviewsHTML();
+  //fillReviewsHTML();
   DBHelper.fetchReviewsById(restaurant.id, fillReviewsHTML);
 }
 
@@ -159,7 +159,12 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
 /**
  * Create all reviews HTML and add them to the webpage.
  */
-fillReviewsHTML = (reviews = self.restaurant.reviews) => {
+const fillReviewsHTML = (error, reviews) => {
+  self.restaurant.reviews = reviews;
+
+  if (error) {
+    console.log('Error retrieving reviews', error);
+  }
   const container = document.getElementById('reviews-container');
   const title = document.createElement('h3');
   title.className = 'review-title';
@@ -195,8 +200,8 @@ createReviewHTML = (review) => {
  	header.appendChild(name);
 
  	const date = document.createElement('span');
- 	date.className = 'date-review';
-date.innerHTML = ` | ${review.date}`; 
+ 	const updatedDate = new Date(review.updatedAt).toLocaleDateString();
+  date.innerHTML = ` | ${updatedDate}`; 
  	header.appendChild(date);
 
  	const body = document.createElement('div');
@@ -227,6 +232,7 @@ date.innerHTML = ` | ${review.date}`;
 
  	return li;
 }
+
 
 /**
  * Add restaurant name to the breadcrumb navigation menu

@@ -333,7 +333,7 @@ class DBHelper {
     //return './data/restaurants.json';
   //return 'https://mokoweb.github.io/restaurant-app/data/restaurants.json';
 
-  return `http://localhost:${port}/restaurants`;
+  return `http://localhost:${port}`;
   }
 
   /**
@@ -591,6 +591,29 @@ static createRestaurantReview(id, name, rating, comments, callback) {
     );
     return marker;
   } */
+//functions to mark and Unmark Favorite button
+  static setFavorite(id) {
+    //console.log('favorite restuarant ID:', id)
+  fetch(`${DBHelper.DATABASE_URL}/restaurants/${id}/?is_favorite=true`, {
+    method: 'PUT'
+  });
+}
 
+
+// http://localhost:1337/restaurants/<restaurant_id>/?is_favorite=false
+static unSetFavorite(id) {
+   //console.log('favorite restuarant ID:' + id)
+  fetch(`${DBHelper.DATABASE_URL}/restaurants/${id}/?is_favorite=false`, {
+    method: 'PUT'
+  });
+}
+
+static fetchReviewsById(id, callback) {
+    
+    return fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${id}`)
+      .then(response => response.json())
+      .then(data => callback(null, data))
+      .catch(err => callback(err, null));
+  }
 }
 
