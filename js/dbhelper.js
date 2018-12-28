@@ -340,7 +340,7 @@ class DBHelper {
    * Fetch all restaurants. **/
    
    static fetchRestaurants(callback) {
-     DBHelper.fetchDataFromIDB()
+     DBHelper.fetchRestaurantDataFromIDB()
       .then(restaurants => {
 
         if(!restaurants.length) {
@@ -391,7 +391,18 @@ const reviewStore = upgradeDb.createObjectStore('reviews', { keyPath: 'id' }, { 
   return dbPromise;
 }
 
+/** grab RestaurantReviewsById **/
+static fetchRestaurantReviewsById(id, callback) {
+ const reviews = DBHelper.fetchReviewDataFromIDB('reviews', 'restaurant_id', id);
+  if (reviews && reviews.length > 0) {
+      callback(null, reviews);
+    }
 
+    fetch(DBHelper.DATABASE_URL + `/reviews/?restaurant_id=${id}`)
+      .then(response => response.json())
+      .then(data => callback(null, data))
+      .catch(err => callback(err, null));
+  }
 
   /**
    * get restaurants data from the server
@@ -400,10 +411,6 @@ static fetchRestaurantFromServer() {
   return fetch(DBHelper.DATABASE_URL)
     .then(resp => {
       return resp.json();
-    })
-    .then(restaurants => {
-      DBHelper.storeResponseToIDB(restaurants);
-      return restaurants;
     });
 
    }
@@ -427,7 +434,7 @@ static storeResponseToIDB(restaurants){
    }
 
 
-static fetchDataFromIDB(){
+static fetchRestaurantDataFromIDB(){
   return DBHelper.OpenIndexDB().then(db => {
     if(!db) return;
     let Dbstore = db
@@ -435,6 +442,51 @@ static fetchDataFromIDB(){
     .objectStore("restaurantDB");
 
     return Dbstore.getAll();
+  });
+
+   }
+
+
+  /**
+   * get restaurants data from the server
+   */
+static fetchReviewFromServer(request) {
+  return fetch(request)
+    .then(resp => {
+      return resp.json();
+    });
+
+   }
+
+   /**
+   * function to store Response To IndexDB
+   */
+
+static storeReviewResponseToIDB(reviews){
+  return DBHelper.OpenIndexDB().then(db => {
+    if(!db) return;
+    let tx = db.transaction("restaurantDB", "readwrite");
+    let Dbstore = tx.objectStore("restaurantDB");
+    reviews.forEach(review => {
+      Dbstore.put(review);
+
+    });
+    return tx.complete;
+  });
+
+   }
+
+
+static fetchReviewDataFromIDB(store, idx, key){
+  
+  return DBHelper.OpenIndexDB().then(db => {
+    if(!db) return;
+    let Dbstore = db
+    .transaction(store)
+    .objectStore(store)
+    .index(idx)
+
+    return Dbstore.getAll(key);
   });
 
    }

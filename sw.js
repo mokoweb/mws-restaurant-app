@@ -1,3 +1,4 @@
+
 const cacheName = "mws-restaurant-project";
 const offlineUrl = "index.html";
 
@@ -56,74 +57,6 @@ self.addEventListener('activate', e =>{
 
 
 
-// intercept all fetch requests
-// return cached data, idb data, or fetch from network
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  const requestUrl = new URL(request.url);
-  
-//If a call includes port 1337 then it’s a request for restaurant data from the database
-  if (requestUrl.port === '1337') {
-  	//If a call includes reviews then it’s a request for restaurant data from the database
-    
-    if (request.url.includes('reviews')) {                     
-      let id = +requestUrl.searchParams.get('restaurant_id');  
-      event.respondWith(idbReviewsResponse(request, id));       
-    } else {                                                   
-      event.respondWith(idbRestaurantResponse(request));
-    }
-  }
-  else {
-    event.respondWith(cacheResponse(request));
-  }
-});
-
- 
-function idbRestaurantResponse(request, id) {
-  // 1. getAll records from objectStore
-  // 2. if more than 1 rec then return match
-  // 3. if no match then fetch json, write to idb, & return response
-
-  return  dbhelper.fetchRestaurantDataFromIDB()
-    .then(restaurants => {
-      if (restaurants.length) {
-        return restaurants;
-      }
-      return DBHelper.fetchRestaurantFromServer()
-        .then(restaurants => {
-     return  DBHelper.storeResponseToIDB(restaurants);
-  
-    })
-    .then(response => new Response(JSON.stringify(response)))
-    .catch(error => {
-      return new Response(error, {
-        status: 404,
-        statusText: 'a bad request'
-      });
-    });
-}
-
-function idbReviewsResponse(request, id) {
-	//fetch reviews from IDB
-  return fetchReviewDataFromIDB('reviews', 'restaurant_id', id)
-    .then(reviews => {
-      if (reviews.length) {
-        return reviews;
-      }
-
-      //fetch from server
-      return fetchReviewFromServer(request)
-      .then(reviews => {
-      return DBHelper.storeReviewResponseToIDB(reviews);
-    })
-    .then(response => new Response(JSON.stringify(response)))
-    .catch(error => {
-      return new Response(error, {
-        status: 404,
-        statusText: 'a bad request'
-      });
-    });
-}
 
 self.addEventListener('fetch', e =>{
 	console.log('[ServiceWorker] Fetch', e.request.url);
@@ -175,3 +108,4 @@ self.addEventListener('fetch', e =>{
 			}) // end caches.match(e.request)
 	); // end e.respondWith
 });
+
