@@ -27,85 +27,49 @@ self.addEventListener("install", event => {
 'restaurant.html?id=1', 'restaurant.html?id=2', 'restaurant.html?id=3', 'restaurant.html?id=4', 'restaurant.html?id=5', 'restaurant.html?id=6', 'restaurant.html?id=7', 'restaurant.html?id=8', 'restaurant.html?id=9', 'restaurant.html?id=10' ]; 
 
 
- 
- event.waitUntil(
-   caches.open(cacheName).then(cache => cache.addAll(urlsToCache))
- );
+ });
+ self.addEventListener('install', event => {
+  console.log('[SERVICE WORKER] Installing service worker');
+  event.waitUntil(
+    caches.open(cacheName)
+    .then(cache => {
+      cache.addAll(resources);
+    })
+    .catch(err => console.log(err))
+  )
+})
+
+self.addEventListener('activate', event => {
+  console.log('[SERVICE WORKER] Activating service worker');
+  const currentCaches = [cacheName];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return cacheNames.filter(cacheName => !currentCaches.includes(cacheName));
+    }).then(cachesToDelete => {
+      return Promise.all(cachesToDelete.map(cacheToDelete => {
+        return caches.delete(cacheToDelete);
+      }));
+    }).then(() => self.clients.claim())
+  );
 });
 
-self.addEventListener('activate', e =>{
-    console.log('[ServiceWorker] Activated');
-
-    e.waitUntil(
-
-    	// Get all the cache keys (cacheName)
-		caches.keys().then(cacheNames =>{
-			return Promise.all(cacheNames.map(thisCacheName =>{
-
-				// If a cached item is saved under a previous cacheName
-				if (thisCacheName !== cacheName) {
-
-					// Delete that cached file
-					console.log('[ServiceWorker] Removing Cached Files from Cache - ', thisCacheName);
-					return caches.delete(thisCacheName);
-				}
-			}));
-		})
-	); // end e.waitUntil
-
+self.addEventListener('fetch', event => {
+  const storageUrl = event.request.url.split(/[?#]/)[0];
+  if (event.request.method.toLowerCase() === 'get') {
+    event.respondWith(
+      caches.open(cacheName)
+      .then(cache => {
+        return cache.match(event.request)
+          .then(response => {
+            const fetchPromise = fetch(event.request)
+              .then(networkResponse => {
+                cache.put(event.request, networkResponse.clone());
+                return networkResponse;
+              })
+            return response || fetchPromise;
+          })
+      })
+      .catch(err => console.log(err))
+    );
+  }
 });
-
-
-
-
-self.addEventListener('fetch', e =>{
-	console.log('[ServiceWorker] Fetch', e.request.url);
-
-	// e.respondWidth Responds to the fetch event
-	e.respondWith(
-
-		// Check in cache for the request being made
-	 caches.match(e.request)
-
-
-			.then(response =>{
-
-				// If the request is in the cache
-				if ( response ) {
-					console.log("[ServiceWorker] Found in Cache", e.request.url, response);
-					// Return the cached version
-					return response;
-				}
-
-				// If the request is NOT in the cache, fetch and cache
-
-				let requestClone = e.request.clone();
-				return fetch(requestClone)
-					.then(response =>{
-
-						if ( !response ) return;
-
-						let responseClone = response.clone();
-
-						//  Open the cache
-						caches.open(cacheName).then(cache =>{
-
-							// Put the fetched response in the cache
-							cache.put(e.request, responseClone);
-							console.log('[ServiceWorker] New Data Cached', e.request.url);
-
-							// Return the response
-							return response;
-			
-				        }); // end caches.open
-
-					})
-					.catch(err =>{
-						console.log('[ServiceWorker] Error Fetching & Caching New Data', err);
-					});
-
-
-			}) // end caches.match(e.request)
-	); // end e.respondWith
-});
-
