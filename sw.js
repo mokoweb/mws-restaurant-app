@@ -68,7 +68,7 @@ self.addEventListener('fetch', event => {
     
     if (request.url.includes('reviews')) {                     
       let id = +requestUrl.searchParams.get('restaurant_id');  
-      event.respondWith(idbReviewResponse(request, id));       
+      event.respondWith(idbReviewsResponse(request, id));       
     } else {                                                   
       event.respondWith(idbRestaurantResponse(request));
     }
@@ -78,7 +78,7 @@ self.addEventListener('fetch', event => {
   }
 });
 
-let j = 0;
+ 
 function idbRestaurantResponse(request, id) {
   // 1. getAll records from objectStore
   // 2. if more than 1 rec then return match
@@ -89,35 +89,41 @@ function idbRestaurantResponse(request, id) {
       if (restaurants.length) {
         return restaurants;
       }
-      return fetch(request)
-        .then(response => response.json())
-        .then(json => {
-          json.forEach(restaurant => {  // loop through json
-            console.log('fetching idb write', ++j, restaurant.id, restaurant.name);
-           
-   			 const store = tx.objectStore('restaurants');
-   			  const tx = db.transaction(store, 'readwrite');
-            set(store, restaurant) {
-			    return dbPromise.then(db => {
-			     
-			      tx.objectStore(store).put(restaurant);  // <- writes each record
-			      return tx.complete;
-			    });
-			  }
-            
-          });
-          return json;
-        });
+      return DBHelper.fetchRestaurantFromServer()
+        .then(restaurants => {
+     return  DBHelper.storeResponseToIDB(restaurants);
+  
     })
     .then(response => new Response(JSON.stringify(response)))
     .catch(error => {
       return new Response(error, {
         status: 404,
-        statusText: 'my bad request'
+        statusText: 'a bad request'
       });
     });
 }
 
+function idbReviewsResponse(request, id) {
+	//fetch reviews from IDB
+  return fetchReviewDataFromIDB('reviews', 'restaurant_id', id)
+    .then(reviews => {
+      if (reviews.length) {
+        return reviews;
+      }
+
+      //fetch from server
+      return fetchReviewFromServer(request)
+      .then(reviews => {
+      return DBHelper.storeReviewResponseToIDB(reviews);
+    })
+    .then(response => new Response(JSON.stringify(response)))
+    .catch(error => {
+      return new Response(error, {
+        status: 404,
+        statusText: 'a bad request'
+      });
+    });
+}
 
 self.addEventListener('fetch', e =>{
 	console.log('[ServiceWorker] Fetch', e.request.url);
