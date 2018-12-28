@@ -340,7 +340,7 @@ class DBHelper {
    * Fetch all restaurants. **/
    
    static fetchRestaurants(callback) {
-     DBHelper.fetchRestaurantDataFromIDB()
+     DBHelper.fetchDataFromIDB()
       .then(restaurants => {
 
         if(!restaurants.length) {
@@ -370,39 +370,15 @@ static OpenIndexDB(){
 
   let dbPromise = idb.open('restaurant-db', 1, (upgradeDb) =>{
       
-     let DbStore = upgradeDb.createObjectStore('restaurantDB', {
-      keyPath: 'id', unique: true
+    let DbStore = upgradeDb.createObjectStore('restaurantDB', {
+      keyPath: 'id'
     });
-
-const reviewStore = upgradeDb.createObjectStore('reviews', { keyPath: 'id' }, { autoIncrement: true });
-    
-     
-
-      upgradeDb.createObjectStore('offlineFavorites', { keyPath: 'restaurant_id' });
-
-      const offlineReviewStore = upgradeDb.createObjectStore('offlineReviews', {
-        keyPath: 'id',
-        autoIncrement: true,
-      });
-      offlineReviewStore.createIndex('restaurant_id', 'restaurant_id');
-      offlineReviewStore.createIndex('date', 'createdAt');
-    });
- 
+    DbStore.createIndex("use-id", "id");
+  });
   return dbPromise;
 }
 
-/** grab RestaurantReviewsById **/
-static fetchRestaurantReviewsById(id, callback) {
- const reviews = DBHelper.fetchReviewDataFromIDB('reviews', 'restaurant_id', id);
-  if (reviews && reviews.length > 0) {
-      callback(null, reviews);
-    }
 
-    fetch(DBHelper.DATABASE_URL + `/reviews/?restaurant_id=${id}`)
-      .then(response => response.json())
-      .then(data => callback(null, data))
-      .catch(err => callback(err, null));
-  }
 
   /**
    * get restaurants data from the server
@@ -411,6 +387,10 @@ static fetchRestaurantFromServer() {
   return fetch(DBHelper.DATABASE_URL)
     .then(resp => {
       return resp.json();
+    })
+    .then(restaurants => {
+      DBHelper.storeResponseToIDB(restaurants);
+      return restaurants;
     });
 
    }
@@ -434,7 +414,7 @@ static storeResponseToIDB(restaurants){
    }
 
 
-static fetchRestaurantDataFromIDB(){
+static fetchDataFromIDB(){
   return DBHelper.OpenIndexDB().then(db => {
     if(!db) return;
     let Dbstore = db
@@ -442,51 +422,6 @@ static fetchRestaurantDataFromIDB(){
     .objectStore("restaurantDB");
 
     return Dbstore.getAll();
-  });
-
-   }
-
-
-  /**
-   * get restaurants data from the server
-   */
-static fetchReviewFromServer(request) {
-  return fetch(request)
-    .then(resp => {
-      return resp.json();
-    });
-
-   }
-
-   /**
-   * function to store Response To IndexDB
-   */
-
-static storeReviewResponseToIDB(reviews){
-  return DBHelper.OpenIndexDB().then(db => {
-    if(!db) return;
-    let tx = db.transaction("restaurantDB", "readwrite");
-    let Dbstore = tx.objectStore("restaurantDB");
-    reviews.forEach(review => {
-      Dbstore.put(review);
-
-    });
-    return tx.complete;
-  });
-
-   }
-
-
-static fetchReviewDataFromIDB(store, idx, key){
-  
-  return DBHelper.OpenIndexDB().then(db => {
-    if(!db) return;
-    let Dbstore = db
-    .transaction(store)
-    .objectStore(store)
-    .index(idx)
-
-    return Dbstore.getAll(key);
   });
 
    }
@@ -646,23 +581,6 @@ static createRestaurantReview(id, name, rating, comments, callback) {
     .catch(err => callback(err, null));
 }
   
-
-  //functions to mark and Unmark Favorite button
-  static setFavorite(id) {
-    //console.log('favorite restuarant ID:', id)
-  fetch(`${DBHelper.DATABASE_URL}/${id}/?is_favorite=true`, {
-    method: 'PUT'
-  });
-}
-
-
-// http://localhost:1337/restaurants/<restaurant_id>/?is_favorite=false
-static unSetFavorite(id) {
-   //console.log('favorite restuarant ID:' + id)
-  fetch(`${DBHelper.DATABASE_URL}/${id}/?is_favorite=false`, {
-    method: 'PUT'
-  });
-}
   /* static mapMarkerForRestaurant(restaurant, map) {
     const marker = new google.maps.Marker({
       position: restaurant.latlng,
