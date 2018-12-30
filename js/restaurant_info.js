@@ -165,10 +165,23 @@ const fillReviewsHTML = (error, reviews) => {
   if (error) {
     console.log('Error retrieving reviews', error);
   }
+
+   //add review button
+  //<button class="btn btn-success btn-lg btn-block" data-toggle="modal" data-target="#myModal">
+  const header = document.getElementById('reviews-header');
+  const addReview = document.createElement('button');
+  addReview.classList.add('btn', 'btn-success');
+  addReview.innerHTML = 'Add a Review'; 
+  addReview.setAttribute('data-toggle', 'modal');
+  addReview.setAttribute('data-target', '#myModal');
+  addReview.setAttribute('aria-label', 'add review');
+  addReview.title = 'Click To Add a Review';
+  //addReview.addEventListener('click', toggleModal);
+  header.appendChild(addReview);
   const container = document.getElementById('reviews-container');
-  //const title = document.createElement('h3');
-  //title.className = 'review-title';
- // title.innerHTML = 'Reviews';
+  const title = document.createElement('h3');
+  title.className = 'review-title';
+  title.innerHTML = 'Reviews';
   container.appendChild(title);
 
   if (!reviews) {
@@ -184,6 +197,102 @@ const fillReviewsHTML = (error, reviews) => {
   container.appendChild(ul);
 }
 
+/*
+Add Reviews Form
+*/
+addReviewForm = (review) => {
+  const form = document.createElement('form');
+  const name = document.createElement('input');
+  name.setAttribute('class', 'name');
+  name.setAttribute('type', 'text');
+  name.setAttribute('placeholder', 'Input your name..');
+  form.appendChild(name);
+
+  const radioInputDiv = document.createElement('div');
+  const text = document.createElement('p');
+  text.innerHTML = 'Select a star rating';
+  radioInputDiv.appendChild(text);
+
+  radioInputDiv.classList.add('rating');
+  for (let i = 5; i >= 1; i--) {
+    const radioInput = document.createElement('input');
+    radioInput.setAttribute('value', i);
+    radioInput.setAttribute('id', `star${i}`);
+    radioInput.setAttribute('type', 'radio');
+    radioInput.setAttribute('name', 'rating');
+    radioInput.setAttribute('required', true);
+    radioInputDiv.appendChild(radioInput);
+    const radioInputLabel = document.createElement('label');
+    radioInputLabel.setAttribute('for', `star${i}`);
+    radioInputDiv.appendChild(radioInputLabel);
+  }
+  form.appendChild(radioInputDiv);
+
+  const reviewBody = document.createElement('textarea');
+  reviewBody.setAttribute('class', 'review-body');
+  reviewBody.setAttribute('type', 'text');
+  reviewBody.setAttribute('placeholder', 'Input Your Review');
+  form.appendChild(reviewBody);
+  buttonClick = (event) => {
+    event.preventDefault();
+      let reviewObject = {
+          "restaurant_id": self.restaurant.id,
+          "name": nameInput.value,
+          "createdAt": (new Date()).getTime(),
+          "updatedAt": (new Date()).getTime(),
+          "rating:" form.rating.value,
+          "comments": reviewInput.value 
+        }
+    
+    //validation
+        if((reviewObject.rating < 0 ) || (reviewObject.rating > 5) ||
+          (reviewObject.name === "") || (reviewObject.rating === "") || 
+          (reviewObject.comments === "")){
+         window.alert(`Your rating must be a value from 1 to 5, all fields are required.`)
+        }else{
+          //save to IDB
+          //post to server if server if it fails
+          //display a network error and save to offline database to be synced later
+        DBHelper.addOfflineReview(reviewObject, (error, review) => {
+     
+        if (error) {
+        console.log('We are offline. Review has been saved to the queue.');
+        //diplay error message
+      } else {
+        //show success alert
+      successMessage.style.display = "block";
+        //Hide alert after 4 sec
+        setTimeout(function(){
+          successMessage.style.display = "none";
+        }, 4000);
+
+        form.reset();
+      }
+      createReviewHTML(review, true);
+    });
+     
+        }
+        
+  }
+
+  const reviewButton = document.createElement('button');
+  reviewButton.setAttribute('class', 'review-button');
+  reviewButton.addEventListener("click", buttonClick);
+  reviewButton.innerHTML = "Submit Review";
+  form.appendChild(reviewButton);
+
+  const successMessage = document.createElement('h4')
+  successMessage.setAttribute("class", "heading");
+  successMessage.innerHTML = "Your review has been posted. Thank you.";
+  successMessage.style.display = 'none';
+  form.appendChild(successMessage);
+
+  
+  return form;
+  
+}
+  const modal = document.getElementById('modal-body');
+    modal.appendChild(addReviewForm());
 /**
  * Create review HTML and add it to the webpage.
  */

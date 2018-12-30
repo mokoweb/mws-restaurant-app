@@ -728,7 +728,7 @@ static unSetFavorite(id) {
 
 static fetchReviewsById(id, callback) {
 
-    if (navigator.serviceWorker) {
+  
      let reviews = DBHelper.fetchStoredRestaurantReviews(Number(id))
      if(reviews.length>0)
      { callback(null, reviews);
@@ -741,6 +741,8 @@ static fetchReviewsById(id, callback) {
       .then(data => { DBHelper.storeReviewsToIDB(data);
         callback(null, data)})
       .catch(err => callback(err + ` Could not fetch reviews`, null));
-      } 
+      }
+    }
+    
      
 }

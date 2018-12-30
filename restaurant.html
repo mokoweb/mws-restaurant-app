@@ -24,6 +24,7 @@
 </head>
 
 <body class="inside">
+  
   <!-- Beginning header -->
   <header>
     <!-- Beginning nav -->
@@ -34,7 +35,7 @@
     <ul id="breadcrumb" >
       <li><a href="/">Home</a></li>
     </ul>
-	 </nav>
+   </nav>
     <!-- End breadcrumb -->
     <!-- End nav -->
   </header>
@@ -50,6 +51,8 @@
     <!-- Beginning restaurant -->
     <section id="restaurant-container">
       <h2 id="restaurant-name"></h2>
+       
+       <button id="restaurant-fav" aria-label="favorite" class="fas fa-heart"></button>
       <img id="restaurant-img" >
       <p id="restaurant-cuisine"></p>
       <p id="restaurant-address"></p>
@@ -58,7 +61,7 @@
     <!-- end restaurant -->
     <!-- Beginning reviews -->
     <section id="reviews-container">
-       <div id="reviews-header"></div>
+        <div id="reviews-header"></div>
       <ul id="reviews-list"></ul>
     </section>
     <!-- End reviews -->
@@ -69,7 +72,29 @@
   <footer id="footer">
     Copyright (c) 2017 <a href="/"><strong>Restaurant Reviews</strong></a> All Rights Reserved.
   </footer>
-  <!-- End footer -->
+  <!-- MODAL
+  ================================================== -->
+  <div class="modal" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <h4 class="modal-title" id="myModalLabel"> Add a Review</h4>
+        </div>
+        <div id="modal-body" class="modal-body">
+          
+          
+          
+          </div><!-- modal-body -->
+      </div><!-- modal-content -->
+    </div><!-- modal-dialog -->
+  </div><!-- modal -->
+
+  <!-- End footer 
+  <script src="js/jquery-2.1.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script> -->
+   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script> 
   <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js" integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw==" crossorigin=""></script>
   <!-- Beginning scripts -->
   <!-- Database helpers -->
