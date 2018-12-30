@@ -614,7 +614,7 @@ static unSetFavorite(id) {
    * Add reviews to IDB.
    */
 
-  static addReviewsToIDB(reviews) {
+  static storeReviewsToIDB(reviews) {
    return DBHelper.OpenIndexDB().then(db => {
     if (!db) return;
     const tx = db.transaction('reviews', 'readwrite');
@@ -700,7 +700,7 @@ static unSetFavorite(id) {
     if(!db) return;
     let tx = db.transaction("reviews");
     let Dbstore = tx.objectStore("reviews");
-    const index = store.index('restaurant_id', 'date');
+    const index = Dbstore.index('restaurant_id', 'date');
 
     return index.getAll(id);
   });
@@ -727,36 +727,20 @@ static unSetFavorite(id) {
   }
 
 static fetchReviewsById(id, callback) {
-    
-    let reviews = [];
-    let storedReviews = [];
-    let offlineReviews = [];
 
     if (navigator.serviceWorker) {
-      storedReviews =  DBHelper.fetchStoredRestaurantReviews(Number(id));
-      // get offline reviews that havent been synced
-      offlineReviews =  DBHelper.fetchOfflineReviews(Number(id));
-    }
+     let reviews = DBHelper.fetchStoredRestaurantReviews(Number(id))
+     if(reviews.length>0)
+     { callback(null, reviews);
+     
 
-    reviews = [...(storedReviews && storedReviews), ...(offlineReviews && offlineReviews)];
-    // if we have data to show then we pass it immediately.
-    if (reviews && reviews.length > 0) {
-      callback(null, reviews);
-    }
-    try {
-      const response =  fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${id}`);
-      if (response.status === 200) {
-        // Got a success response from server!
-        const reviews =   response.json();
-        if (navigator.serviceWorker) DBHelper.storeReviewsToIDB(reviews);
-        // update webpage with new data
-        callback(null, [...reviews, ...(offlineReviews && offlineReviews)]);
-      } else {
-        callback('Could not fetch reviews', null);
-      }
-    } catch (error) {
-      callback(error, null);
-    }
-  }
+    }else{
+    
+       fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${id}`)
+      .then(response => response.json())
+      .then(data => { DBHelper.storeReviewsToIDB(data);
+        callback(null, data)})
+      .catch(err => callback(err + ` Could not fetch reviews`, null));
+      } 
+     
 }
-
