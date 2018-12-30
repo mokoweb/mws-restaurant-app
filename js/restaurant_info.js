@@ -166,9 +166,9 @@ const fillReviewsHTML = (error, reviews) => {
     console.log('Error retrieving reviews', error);
   }
   const container = document.getElementById('reviews-container');
-  const title = document.createElement('h3');
-  title.className = 'review-title';
-  title.innerHTML = 'Reviews';
+  //const title = document.createElement('h3');
+  //title.className = 'review-title';
+ // title.innerHTML = 'Reviews';
   container.appendChild(title);
 
   if (!reviews) {
