@@ -628,7 +628,7 @@ static unSetFavorite(id) {
    * Add review to IDB.
    */
 
-  static  addReviewToIDB(review) {
+  static  postReviewToIDB(review) {
    return DBHelper.OpenIndexDB().then(db => {
     if (!db) return;
     const tx = db.transaction('reviews', 'readwrite');
@@ -637,11 +637,12 @@ static unSetFavorite(id) {
     return tx.complete;
      });
   }
+
+
   /**
    * Add offline review.
    */
   static addOfflineReview(review, callback) {
-    try {
       if (navigator.serviceWorker && window.SyncManager) {
        return DBHelper.OpenIndexDB().then(db => {
         if (!db) return;
@@ -650,19 +651,10 @@ static unSetFavorite(id) {
         store.put(review);
         callback(null, review);
         
-        // register a sync
-        navigator.serviceWorker.ready
-          }).then((reg) => {
-            return reg.sync.register('syncReviews');
-          })
-          .catch((err) => console.log(err));
-      } else {
-        DBHelper.postReview(review, callback);
-      }
-    } catch (error) {
-      callback('Error adding review!', null);
-    }
+       
+    });
   }
+}
   /**
    * Get offline review.
    */
@@ -709,7 +701,7 @@ static unSetFavorite(id) {
   /**
    * Add a new review
    */
-  static  postReview(data, callback = () => {}) {
+  static  postReviewToServer(data, callback = () => {}) {
     try {
       const response =   fetch(`${DBHelper.DATABASE_URL}/reviews`, {
         method: 'POST',

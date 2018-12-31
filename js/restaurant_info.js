@@ -237,11 +237,11 @@ addReviewForm = (review) => {
     event.preventDefault();
       let reviewObject = {
           "restaurant_id": self.restaurant.id,
-          "name": nameInput.value,
+          "name": name.value,
           "createdAt": (new Date()).getTime(),
           "updatedAt": (new Date()).getTime(),
-          "rating:" form.rating.value,
-          "comments": reviewInput.value 
+          "rating:" : form.rating.value,
+          "comments": reviewBody.value 
         }
     
     //validation
@@ -253,14 +253,11 @@ addReviewForm = (review) => {
           //save to IDB
           //post to server if server if it fails
           //display a network error and save to offline database to be synced later
-        DBHelper.addOfflineReview(reviewObject, (error, review) => {
-     
-        if (error) {
-        console.log('We are offline. Review has been saved to the queue.');
-        //diplay error message
-      } else {
+        DBHelper.postReviewToIDB(reviewObject)
+        .then(DBHelper.postReviewToServer(reviewObject)) 
+        .catch(DBHelper.addOfflineReview(reviewObject));
         //show success alert
-      successMessage.style.display = "block";
+         successMessage.style.display = "block"
         //Hide alert after 4 sec
         setTimeout(function(){
           successMessage.style.display = "none";
@@ -269,11 +266,9 @@ addReviewForm = (review) => {
         form.reset();
       }
       createReviewHTML(review, true);
-    });
+    }
      
-        }
-        
-  }
+  
 
   const reviewButton = document.createElement('button');
   reviewButton.setAttribute('class', 'review-button');
