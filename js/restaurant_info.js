@@ -245,49 +245,58 @@ addReviewForm = (review) => {
         }
     
     //validation
-        if((reviewObject.rating < 0 ) || (reviewObject.rating > 5) ||
-          (reviewObject.name === "") || (reviewObject.rating === "") || 
-          (reviewObject.comments === "")){
-         window.alert(`Your rating must be a value from 1 to 5, all fields are required.`)
+        if((reviewObject.name === "") || (reviewObject.rating === "") || 
+          (reviewObject.comments === "")) {
+         window.alert(`All fields are required.`);
         }else{
           //save to IDB
-          //post to server if server if it fails
-          //display a network error and save to offline database to be synced later
+          //try to post to server 
+          //if server if it fails, display a network error and save to offline database to be synced later
         DBHelper.postReviewToIDB(reviewObject)
-        .then(DBHelper.postReviewToServer(reviewObject)) 
-        .catch(DBHelper.addOfflineReview(reviewObject));
-        //show success alert
-         successMessage.style.display = "block"
-        //Hide alert after 4 sec
-        setTimeout(function(){
-          successMessage.style.display = "none";
-        }, 4000);
+        .then(response => DBHelper.postReviewToServer((response), (error, review)) => {
+        console.log('got update callback');
+    
+      if (error) {
+        console.log('We are offline. Review has been saved to the queue.');
+        //post to offline IDB
+        DBHelper.addOfflineReview(reviewObject)
+        // register a sync
+        .then(navigator.serviceWorker.ready)
+          .then((reg) => {
+            return reg.sync.register('syncReviews');
+          })
+          .catch((err) => console.log(err));
+       
+        showMessage('offline');
+      } else {
+        console.log('Received updated record from DB Server', review);
+        showMessage('success');
+      }});
 
-        form.reset();
       }
       createReviewHTML(review, true);
     }
      
-  
 
-  const reviewButton = document.createElement('button');
-  reviewButton.setAttribute('class', 'review-button');
-  reviewButton.addEventListener("click", buttonClick);
-  reviewButton.innerHTML = "Submit Review";
-  form.appendChild(reviewButton);
-
-  const successMessage = document.createElement('h4')
-  successMessage.setAttribute("class", "heading");
-  successMessage.innerHTML = "Your review has been posted. Thank you.";
-  successMessage.style.display = 'none';
-  form.appendChild(successMessage);
-
-  
   return form;
-  
+   
 }
   const modal = document.getElementById('modal-body');
     modal.appendChild(addReviewForm());
+
+  const showMessage = (message) => { const successMessage = document.createElement('h4');
+  successMessage.setAttribute("class", "heading");
+  successMessage.innerHTML = message;
+  successMessage.style.display = "block"
+  form.appendChild(successMessage);
+
+  setTimeout(function(){
+          successMessage.style.display = "none";
+        }, 4000);
+
+        form.reset();
+
+  }
 /**
  * Create review HTML and add it to the webpage.
  */
@@ -302,7 +311,7 @@ createReviewHTML = (review) => {
  	name.className = 'name-review';
  	name.innerHTML = review.name;
  	header.appendChild(name);
-
+ 
  	const date = document.createElement('span');
  	const updatedDate = new Date(review.updatedAt).toLocaleDateString();
   date.innerHTML = ` | ${updatedDate}`; 

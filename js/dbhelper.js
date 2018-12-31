@@ -477,6 +477,15 @@ static fetchDataFromIDB(){
     });
   }
 
+  static async getOfflineReviews() {
+    const db = await DBHelper.openDatabase();
+    if (!db) return;
+    const tx = db.transaction('offlineReviews');
+    const store = tx.objectStore('offlineReviews');
+
+    return store.getAll();
+  }
+
   /**
    * Fetch restaurants by a cuisine and a neighborhood with proper error handling.
    */
@@ -614,20 +623,6 @@ static unSetFavorite(id) {
    * Add reviews to IDB.
    */
 
-  static storeReviewsToIDB(reviews) {
-   return DBHelper.OpenIndexDB().then(db => {
-    if (!db) return;
-    const tx = db.transaction('reviews', 'readwrite');
-    const store = tx.objectStore('reviews');
-    reviews.forEach((review) => store.put(review));
-    return tx.complete;
-
-  });
-  }
-  /**
-   * Add review to IDB.
-   */
-
   static  postReviewToIDB(review) {
    return DBHelper.OpenIndexDB().then(db => {
     if (!db) return;
@@ -651,7 +646,9 @@ static unSetFavorite(id) {
         store.put(review);
         return tx.complete;
          });
+
   }
+  
 }
   /**
    * Get offline review.
@@ -707,14 +704,14 @@ static unSetFavorite(id) {
       });
       if (response.status === 201) {
         const responseData =   response.json();
-        callback(null, responseData);
+        //callback(null, responseData);
         return responseData;
       }
     } catch (error) {
-      callback('Error adding review', null);
-      return error;
+      callback(error, null);
     }
   }
+
 
 static fetchReviewsById(id, callback) {
 
