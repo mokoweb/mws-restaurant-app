@@ -649,10 +649,8 @@ static unSetFavorite(id) {
         const tx = db.transaction('offlineReviews', 'readwrite');
         const store = tx.objectStore('offlineReviews');
         store.put(review);
-        callback(null, review);
-        
-       
-    });
+        return tx.complete;
+         });
   }
 }
   /**
