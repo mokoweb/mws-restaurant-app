@@ -271,11 +271,12 @@ addReviewForm = (review) => {
         console.log('Received updated record from DB Server', review);
            showMessage('online')
       }
+       createReviewHTML(review, true);
     });
         });
    }
 }
-}
+};
   const modal = document.getElementById('modal-body');
     modal.appendChild(addReviewForm());
 
@@ -339,7 +340,7 @@ createReviewHTML = (review) => {
  	body.appendChild(comments);
 
  	return li;
-}
+};
 
 
 /**
@@ -350,7 +351,7 @@ fillBreadcrumb = (restaurant=self.restaurant) => {
   const li = document.createElement('li');
   li.innerHTML = restaurant.name;
   breadcrumb.appendChild(li);
-}
+};
 
 /**
  * Get a parameter by name from page URL.
@@ -366,4 +367,4 @@ getParameterByName = (name, url) => {
   if (!results[2])
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
-}
+};
