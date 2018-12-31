@@ -282,7 +282,7 @@ addReviewForm = (review) => {
   successMessage.style.display = "block"
   form.appendChild(successMessage);
 
-  setTimeout(function(){
+  setTimeout(()=>{
           successMessage.style.display = "none";
         }, 4000);
 
