@@ -254,10 +254,12 @@ addReviewForm = (review) => {
           //if server if it fails, display a network error and save to offline database to be synced later
         DBHelper.postReviewToIDB(reviewObject)
         .then(response => {
-          DBHelper.postReviewToServer(response)
-           .then(showMessage('online'));})
-        .catch(()=>{
-         DBHelper.addOfflineReview(reviewObject)
+          DBHelper.postReviewToServer(response, (error, review) => {
+      console.log('got add callback');
+      form.reset();
+      if (error) {
+        console.log('We are offline. Review has been saved to the queue.');
+        DBHelper.addOfflineReview(reviewObject)
         .then(showMessage('offline'))
         // register a sync
         .then(navigator.serviceWorker.ready)
@@ -265,13 +267,14 @@ addReviewForm = (review) => {
             return reg.sync.register('syncReviews');
           })
           .catch((err) => console.log(err));
-     });
-      createReviewHTML(review, true);
-    }
-     
-
-  return form;
-   
+      } else {
+        console.log('Received updated record from DB Server', review);
+           showMessage('online')
+      }
+    });
+        });
+   }
+}
 }
   const modal = document.getElementById('modal-body');
     modal.appendChild(addReviewForm());

@@ -697,7 +697,7 @@ static unSetFavorite(id) {
   /**
    * Add a new review
    */
-  static  postReviewToServer(data) {
+  static  postReviewToServer(data, callback = () => {}) {
     try {
       const response =   fetch(`${DBHelper.DATABASE_URL}/reviews`, {
         method: 'POST',
@@ -709,7 +709,7 @@ static unSetFavorite(id) {
         return responseData;
       }
     } catch (error) {
-      return error;
+      callback(error, null);
     }
   }
 
