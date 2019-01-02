@@ -239,17 +239,17 @@ addReviewForm = (review) => {
         }else{
       
       // Make the request
-
+        console.log(reviewObject);
          //save to OfflineDB
          DBHelper.postReviewToIDB(reviewObject)
-      .then( ()=> {
-        DBHelper.postReviewToServer(reviewObject, (error, review) => {
+      .then( (resp)=> {
+        DBHelper.postReviewToServer(resp, (error, review) => {
      
         if (error) {
         console.log('We are offline. Review has been saved to the queue.');
-        DBHelper.addOfflineReview(reviewObject)
+        DBHelper.addOfflineReview(resp)
         //diplay error message
-        .then(showMessage('offline'))
+       // .then(showMessage('offline'))
         // register a sync
         .then(navigator.serviceWorker.ready)
           .then((reg) => {
@@ -259,7 +259,7 @@ addReviewForm = (review) => {
       } else {
         //show success alert
       console.log('Received updated record from DB Server', review);
-           showMessage('online')
+          // showMessage('online')
       
 
         form.reset();
@@ -269,7 +269,7 @@ addReviewForm = (review) => {
       })//then
       .catch((err) => console.log(err, '...postReviewToIDB'));
 
-      createReviewHTML(review, true);
+     // createReviewHTML(review, true);
    
      
 

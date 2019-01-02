@@ -639,13 +639,19 @@ static unSetFavorite(id) {
    */
 
   static  postReviewToIDB(review) {
+    if(!review || review === null || review==="" || review === undefined){
+      console.error('check the passed arguments');
+    
+    return;
+     }
+
    return DBHelper.OpenIndexDB().then(db => {
     if (!db) return;
     const tx = db.transaction('reviews', 'readwrite');
     const store = tx.objectStore('reviews');
     store.put(review);
-    return tx.complete;
-   // return review;
+    tx.complete;
+   return review;
      });
   }
 
