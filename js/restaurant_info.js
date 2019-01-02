@@ -176,7 +176,7 @@ const fillReviewsHTML = (error, reviews) => {
   addReview.setAttribute('data-target', '#myModal');
   addReview.setAttribute('aria-label', 'add review');
   addReview.title = 'Click To Add a Review';
-  //addReview.addEventListener('click', toggleModal);
+  //addReview.addEventListener('click', modal);
   header.appendChild(addReview);
   const container = document.getElementById('reviews-container');
   const title = document.createElement('h3');
@@ -197,10 +197,13 @@ const fillReviewsHTML = (error, reviews) => {
   container.appendChild(ul);
 }
 
+
 /*
 Add Reviews Form
 */
 addReviewForm = (review) => {
+  const modal = document.getElementById('modal-body');
+
   const form = document.createElement('form');
   const name = document.createElement('input');
   name.setAttribute('class', 'name');
@@ -233,6 +236,7 @@ addReviewForm = (review) => {
   reviewBody.setAttribute('type', 'text');
   reviewBody.setAttribute('placeholder', 'Input Your Review');
   form.appendChild(reviewBody);
+  modal.appendChild(form);
   buttonClick = (event) => {
     event.preventDefault();
       let reviewObject = {
@@ -276,8 +280,7 @@ addReviewForm = (review) => {
         });
    }
 }
-const modal = document.getElementById('modal-body');
-    modal.appendChild(addReviewForm());
+
 };
   
 

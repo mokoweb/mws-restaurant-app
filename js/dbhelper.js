@@ -415,6 +415,8 @@ static storeResponseToIDB(restaurants){
    }
 
 static postReviewsToIDB(reviews){
+  if(!reviews || reviews ==='' || reviews === null || reviews === undefined || reviews.length < 1){
+    console.log('problem with review passed', reviews); }
   return DBHelper.OpenIndexDB().then(db => {
     if(!db) return;
     let tx = db.transaction("reviews", "readwrite");
@@ -730,9 +732,10 @@ static unSetFavorite(id) {
 static fetchReviewsById(id, callback) {
 
   
-     let reviews = DBHelper.fetchStoredRestaurantReviews(Number(id))
+     let reviews = DBHelper.fetchStoredRestaurantReviews(Number(id));
      if(reviews.length>0)
      { 
+      console.log('reviews greater than zero');
       callback(null, reviews);
      
 
