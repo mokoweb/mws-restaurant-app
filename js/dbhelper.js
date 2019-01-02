@@ -414,7 +414,20 @@ static storeResponseToIDB(restaurants){
 
    }
 
+static postReviewsToIDB(reviews){
+  return DBHelper.OpenIndexDB().then(db => {
+    if(!db) return;
+    let tx = db.transaction("reviews", "readwrite");
+    let Dbstore = tx.objectStore("reviews");
+    reviews.forEach(review => {
+      Dbstore.put(review);
 
+    });
+    tx.complete;
+    return reviews;
+  });
+
+   }
 static fetchDataFromIDB(){
   return DBHelper.OpenIndexDB().then(db => {
     if(!db) return;
@@ -719,15 +732,17 @@ static fetchReviewsById(id, callback) {
   
      let reviews = DBHelper.fetchStoredRestaurantReviews(Number(id))
      if(reviews.length>0)
-     { callback(null, reviews);
+     { 
+      callback(null, reviews);
      
 
     }else{
     
        fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${id}`)
       .then(response => response.json())
-      .then(data => { DBHelper.storeReviewsToIDB(data);
-        callback(null, data)})
+      .then(data => DBHelper.postReviewsToIDB(data))
+      .then(rev => callback(null, rev))
+      
       .catch(err => callback(err + ` Could not fetch reviews`, null));
       }
     }

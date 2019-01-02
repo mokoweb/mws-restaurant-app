@@ -276,9 +276,10 @@ addReviewForm = (review) => {
         });
    }
 }
-};
-  const modal = document.getElementById('modal-body');
+const modal = document.getElementById('modal-body');
     modal.appendChild(addReviewForm());
+};
+  
 
   const showMessage = (message) => { const successMessage = document.createElement('h4');
   successMessage.setAttribute("class", "heading");
