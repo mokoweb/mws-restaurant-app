@@ -202,8 +202,6 @@ const fillReviewsHTML = (error, reviews) => {
 Add Reviews Form
 */
 addReviewForm = (review) => {
-  const modal = document.getElementById('modal-body');
-
   const form = document.createElement('form');
   const name = document.createElement('input');
   name.setAttribute('class', 'name');
@@ -211,32 +209,17 @@ addReviewForm = (review) => {
   name.setAttribute('placeholder', 'Input your name..');
   form.appendChild(name);
 
-  const radioInputDiv = document.createElement('div');
-  const text = document.createElement('p');
-  text.innerHTML = 'Select a star rating';
-  radioInputDiv.appendChild(text);
-
-  radioInputDiv.classList.add('rating');
-  for (let i = 5; i >= 1; i--) {
-    const radioInput = document.createElement('input');
-    radioInput.setAttribute('value', i);
-    radioInput.setAttribute('id', `star${i}`);
-    radioInput.setAttribute('type', 'radio');
-    radioInput.setAttribute('name', 'rating');
-    radioInput.setAttribute('required', true);
-    radioInputDiv.appendChild(radioInput);
-    const radioInputLabel = document.createElement('label');
-    radioInputLabel.setAttribute('for', `star${i}`);
-    radioInputDiv.appendChild(radioInputLabel);
-  }
-  form.appendChild(radioInputDiv);
+  const rating = document.createElement('input');
+  rating.setAttribute('class', 'rating');
+  rating.setAttribute('type', 'number');
+  rating.setAttribute('placeholder', 'Number From 1 - 5');
+  form.appendChild(rating);
 
   const reviewBody = document.createElement('textarea');
   reviewBody.setAttribute('class', 'review-body');
   reviewBody.setAttribute('type', 'text');
   reviewBody.setAttribute('placeholder', 'Input Your Review');
   form.appendChild(reviewBody);
-  modal.appendChild(form);
   buttonClick = (event) => {
     event.preventDefault();
       let reviewObject = {
@@ -244,26 +227,28 @@ addReviewForm = (review) => {
           "name": name.value,
           "createdAt": (new Date()).getTime(),
           "updatedAt": (new Date()).getTime(),
-          "rating:" : form.rating.value,
+          "rating": parseInt(rating.value),
           "comments": reviewBody.value 
         }
     
     //validation
-        if((reviewObject.name === "") || (reviewObject.rating === "") || 
-          (reviewObject.comments === "")) {
-         window.alert(`All fields are required.`);
+        if((reviewObject.rating < 0 ) || (reviewObject.rating > 5) ||
+          (reviewObject.name === "") || (reviewObject.rating === "") || 
+          (reviewObject.comments === "")){
+         window.alert(`Your rating must be a value from 1 to 5, all fields are required.`)
         }else{
-          //save to IDB
-          //try to post to server 
-          //if server if it fails, display a network error and save to offline database to be synced later
-        DBHelper.postReviewToIDB(reviewObject)
-        .then(response => {
-          DBHelper.postReviewToServer(response, (error, review) => {
-      console.log('got add callback');
-      form.reset();
-      if (error) {
+      
+      // Make the request
+
+         //save to OfflineDB
+         DBHelper.postReviewToIDB(reviewObject)
+      .then( ()=> {
+        DBHelper.postReviewToServer(reviewObject, (error, review) => {
+     
+        if (error) {
         console.log('We are offline. Review has been saved to the queue.');
         DBHelper.addOfflineReview(reviewObject)
+        //diplay error message
         .then(showMessage('offline'))
         // register a sync
         .then(navigator.serviceWorker.ready)
@@ -272,17 +257,36 @@ addReviewForm = (review) => {
           })
           .catch((err) => console.log(err));
       } else {
-        console.log('Received updated record from DB Server', review);
+        //show success alert
+      console.log('Received updated record from DB Server', review);
            showMessage('online')
-      }
-       createReviewHTML(review, true);
-    });
-        });
-   }
-}
+      
 
-};
+        form.reset();
+       }
+
+     });//error review
+      })//then
+      .catch((err) => console.log(err, '...postReviewToIDB'));
+
+      createReviewHTML(review, true);
+   
+     
+
+
+
+        }//validation
+      }//button click
+
   
+        
+
+
+  const reviewButton = document.createElement('button');
+  reviewButton.setAttribute('class', 'review-button');
+  reviewButton.addEventListener("click", buttonClick);
+  reviewButton.innerHTML = "Submit Review";
+  form.appendChild(reviewButton);
 
   const showMessage = (message) => { const successMessage = document.createElement('h4');
   successMessage.setAttribute("class", "heading");
@@ -297,6 +301,15 @@ addReviewForm = (review) => {
         form.reset();
 
   }
+
+  
+  return form;
+  
+}
+  const modal = document.getElementById('modal-body');
+    modal.appendChild(addReviewForm());
+
+  
 /**
  * Create review HTML and add it to the webpage.
  */

@@ -644,8 +644,8 @@ static unSetFavorite(id) {
     const tx = db.transaction('reviews', 'readwrite');
     const store = tx.objectStore('reviews');
     store.put(review);
-    tx.complete;
-    return review;
+    return tx.complete;
+   // return review;
      });
   }
 
