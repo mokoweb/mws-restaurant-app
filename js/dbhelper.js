@@ -651,7 +651,6 @@ static unSetFavorite(id) {
     const store = tx.objectStore('reviews');
     store.put(review);
     tx.complete;
-   return review;
      });
   }
 
@@ -659,8 +658,8 @@ static unSetFavorite(id) {
   /**
    * Add offline review.
    */
-  static addOfflineReview(review, callback) {
-      if (navigator.serviceWorker && window.SyncManager) {
+  static addOfflineReview(review) {
+     
        return DBHelper.OpenIndexDB().then(db => {
         if (!db) return;
         const tx = db.transaction('offlineReviews', 'readwrite');
@@ -669,7 +668,7 @@ static unSetFavorite(id) {
         return tx.complete;
          });
 
-  }
+
   
 }
   /**
@@ -718,7 +717,7 @@ static unSetFavorite(id) {
   /**
    * Add a new review
    */
-  static  postReviewToServer(data, callback = () => {}) {
+  static  postReviewToServer(data, callback) {
     try {
       const response =   fetch(`${DBHelper.DATABASE_URL}/reviews`, {
         method: 'POST',
@@ -726,11 +725,12 @@ static unSetFavorite(id) {
       });
       if (response.status === 201) {
         const responseData =   response.json();
-        //callback(null, responseData);
-        return responseData;
+        callback(null, responseData);
+        //return responseData;
       }
     } catch (error) {
       callback(error, null);
+      //return error;
     }
   }
 
