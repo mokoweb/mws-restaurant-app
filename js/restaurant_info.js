@@ -247,7 +247,7 @@ addReviewForm = (review) => {
      
         if (error) {
         console.log('We are offline. Review has been saved to the queue.');
-        DBHelper.addOfflineReview(reviewObject)
+       /** DBHelper.addOfflineReview(reviewObject)
         //diplay error message
        // .then(showMessage('offline'))
         // register a sync
@@ -256,6 +256,8 @@ addReviewForm = (review) => {
             return reg.sync.register('syncReviews');
           })
           .catch((err) => console.log(err));
+
+          **/
       } else {
         //show success alert
       console.log('Received updated record from DB Server');

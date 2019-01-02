@@ -364,15 +364,14 @@ static OpenIndexDB(){
       return idb.open('restaurant-db', 1, (upgradeDb) => {
       upgradeDb.createObjectStore('restaurantDB', { keyPath: 'id' });
 
-      const reviewStore = upgradeDb.createObjectStore('reviews', { keyPath: 'id' });
+      const reviewStore = upgradeDb.createObjectStore('reviews', {autoIncrement: true});
       reviewStore.createIndex('restaurant_id', 'restaurant_id');
       reviewStore.createIndex('date', 'createdAt');
 
-      upgradeDb.createObjectStore('offlineFavorites', { keyPath: 'restaurant_id' });
+      const offlineFavorites = upgradeDb.createObjectStore('offlineFavorites', { keyPath: 'restaurant_id' });
 
       const offlineReviewStore = upgradeDb.createObjectStore('offlineReviews', {
-        keyPath: 'id',
-        autoIncrement: true,
+        autoIncrement: true
       });
       offlineReviewStore.createIndex('restaurant_id', 'restaurant_id');
       offlineReviewStore.createIndex('date', 'createdAt');
@@ -650,7 +649,7 @@ static unSetFavorite(id) {
     const tx = db.transaction('reviews', 'readwrite');
     const store = tx.objectStore('reviews');
     store.put(review);
-    tx.complete;
+    return tx.complete;
      });
   }
 
@@ -718,23 +717,28 @@ static unSetFavorite(id) {
    * Add a new review
    */
   static  postReviewToServer(data, callback) {
-    try {
-      const response =   fetch(`${DBHelper.DATABASE_URL}/reviews`, {
+   
+       fetch(`${DBHelper.DATABASE_URL}/reviews`, {
         method: 'POST',
         body: JSON.stringify(data),
+      })
+      .then(response => response.json())
+      .then(data => callback(null, data))
+      .catch(err => {
+        // We are offline...
+        //save to IDB
+         DBHelper.addOfflineReview(data)
+        //diplay error message
+       // .then(showMessage('offline'))
+        // register a sync
+        .then(navigator.serviceWorker.ready)
+          .then((reg) => {
+            return reg.sync.register('syncReviews');
+          })
+          .catch((err) => console.log(err));
+        callback(err, null);
       });
-      if (response.status === 201) {
-        const responseData =   response.json();
-        callback(null, responseData);
-        //return responseData;
-      }
-    } catch (error) {
-      callback(error, null);
-      //return error;
-    }
-  }
-
-
+}
 static fetchReviewsById(id, callback) {
 
   
