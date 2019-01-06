@@ -797,30 +797,33 @@ static fetchReviewsById(id, callback) {
   // Get Data from indexedDB
 
   var data = DBHelper.fetchOfflineReviews();
-
- 
+if(data){ 
+  data.then(dat => { 
+   var delete_key = dat[0].review_id;
   // Post data to server
   
-  data.then(dat => {// Setup the request
+       // Setup the request
  
-     console.log(dat);
-     console.log(data);
+    
         var headers = new Headers();
         // Set some Headers
         headers.set('Accept', 'application/json');
           
 
-       fetch(`${DBHelper.DATABASE_URL}/reviews`, {
+        fetch(`${DBHelper.DATABASE_URL}/reviews`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(dat),
-      })
-       DBHelper.removeOfflineReviewFromIDB(dat.review_id);
+        body: JSON.stringify(data)
+      }).then(()=>{
+       DBHelper.removeOfflineReviewFromIDB(delete_key)
+       .then(console.log('delete okay'))
+       .catch(err=> console.error(err, 'unable to delete'));
      
-      })}
+      }).catch(err => console.error(err, 'error with post'));
 
-
-
+});
+}
+}
   static processQueuen() {
   // Open offline queue & return cursor
   const report = DBHelper.fetchOfflineReviews();
