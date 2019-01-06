@@ -796,28 +796,28 @@ static fetchReviewsById(id, callback) {
 
   // Get Data from indexedDB
 
-  DBHelper.fetchOfflineReviews()
+  var data = DBHelper.fetchOfflineReviews();
 
  
   // Post data to server
   
-  .then(data => {// Setup the request
-    console.log(data);
+  data.then(dat => {// Setup the request
+ 
+     console.log(dat);
+     console.log(data);
         var headers = new Headers();
         // Set some Headers
         headers.set('Accept', 'application/json');
+          
 
        fetch(`${DBHelper.DATABASE_URL}/reviews`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(data),
-      });
-     })
-      .then(response => response.json())
-    // If Post succeeds, delete data from IndexedDB
-   
-    .then(data => removeOfflineReviewFromIDB(data.review_id))
-    .then( console.log('donegh'))}
+        body: JSON.stringify(dat),
+      })
+       DBHelper.removeOfflineReviewFromIDB(dat.review_id);
+     
+      })}
 
 
 
