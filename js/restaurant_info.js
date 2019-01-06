@@ -242,45 +242,24 @@ addReviewForm = (review) => {
         console.log(reviewObject);
          //save to OfflineDB
          DBHelper.postReviewToIDB(reviewObject)
-      .then( ()=> {
-        DBHelper.postReviewToServer(reviewObject, (error, review) => {
+      .then(DBHelper.postReviewToServer(reviewObject, (error, review) => {
      
         if (error) {
         console.log('We are offline. Review has been saved to the queue.');
-       /** DBHelper.addOfflineReview(reviewObject)
         //diplay error message
-       // .then(showMessage('offline'))
-        // register a sync
-        .then(navigator.serviceWorker.ready)
-          .then((reg) => {
-            return reg.sync.register('syncReviews');
-          })
-          .catch((err) => console.log(err));
-
-          **/
       } else {
         //show success alert
-      console.log('Received updated record from DB Server');
-          // showMessage('online')
-      
+      showMessage('online');
 
         form.reset();
-       }
-
-     });//error review
-      })//then
-      .catch((err) => console.log(err, '...postReviewToIDB'));
-
-     // createReviewHTML(review, true);
-   
+      }
+      createReviewHTML(reviewObject, true);
+    }));
      
-
-
-
         }//validation
       }//button click
 
-  
+ 
         
 
 
@@ -290,7 +269,8 @@ addReviewForm = (review) => {
   reviewButton.innerHTML = "Submit Review";
   form.appendChild(reviewButton);
 
-  const showMessage = (message) => { const successMessage = document.createElement('h4');
+  const showMessage = (message) => { 
+  const successMessage = document.createElement('h4');
   successMessage.setAttribute("class", "heading");
   successMessage.innerHTML = message;
   successMessage.style.display = "block"

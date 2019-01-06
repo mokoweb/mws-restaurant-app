@@ -1,3 +1,5 @@
+
+
 let restaurants,
   neighborhoods,
   cuisines
@@ -12,6 +14,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
   fetchNeighborhoods();
   fetchCuisines();
   registerServiceWorker();
+  processQueue();
 });
 
 /**
@@ -28,6 +31,8 @@ fetchNeighborhoods = () => {
   });
 }
 
+processQueue = () =>{ 
+  window.addEventListener('online', DBHelper.processQueue());}
 /**
  * Set neighborhoods HTML.
  */

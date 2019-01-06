@@ -104,35 +104,7 @@ self.addEventListener('fetch', e =>{
 			}) // end caches.match(e.request)
 	); // end e.respondWith
 });
+ 
 
-self.addEventListener('sync', async (event) => {
-  if (event.tag == 'syncFavorites') {
-    event.waitUntil(
-      SyncHelper.syncFavorites().catch((err) => {
-        if (event.lastChance) {
-          SyncHelper.clearStore('offlineFavorites');
-        }
-      }),
-    );
-  }
-  if (event.tag == 'syncReviews') {
-    event.waitUntil(
-      SyncHelper.syncReviews()
-        .then(function() {
-          self.registration.showNotification('Review Posted!');
-        })
-        .catch((err) => {
-          if (event.lastChance) {
-            self.registration.showNotification(
-              'Some of your reviews have failed to be posted online',
-            );
-            SyncHelper.clearStore('offlineReviews');
-          } else {
-            self.registration.showNotification(
-              'Some reviews not be posted online, but they will be saved offline for now',
-            );
-          }
-        }),
-    );
-  }
-});
+ 
+

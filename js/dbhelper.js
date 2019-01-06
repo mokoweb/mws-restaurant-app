@@ -364,17 +364,26 @@ static OpenIndexDB(){
       return idb.open('restaurant-db', 1, (upgradeDb) => {
       upgradeDb.createObjectStore('restaurantDB', { keyPath: 'id' });
 
+      /**
       const reviewStore = upgradeDb.createObjectStore('reviews', {autoIncrement: true});
+      reviewStore.createIndex('restaurant_id', 'restaurant_id');
+      reviewStore.createIndex('date', 'createdAt');
+      **/
+
+      const reviewStore = upgradeDb.createObjectStore('reviews', {
+        autoIncrement: true
+      });
+
       reviewStore.createIndex('restaurant_id', 'restaurant_id');
       reviewStore.createIndex('date', 'createdAt');
 
       const offlineFavorites = upgradeDb.createObjectStore('offlineFavorites', { keyPath: 'restaurant_id' });
 
-      const offlineReviewStore = upgradeDb.createObjectStore('offlineReviews', {
-        autoIncrement: true
-      });
+      const offlineReviewStore = upgradeDb.createObjectStore('offlineReviews', {keyPath: 'review_id', autoIncrement: true})
+
       offlineReviewStore.createIndex('restaurant_id', 'restaurant_id');
-      offlineReviewStore.createIndex('date', 'createdAt');
+
+
     });
   }
 
@@ -635,7 +644,7 @@ static unSetFavorite(id) {
 
   /**
    * Add reviews to IDB.
-   */
+   
 
   static  postReviewToIDB(review) {
     if(!review || review === null || review==="" || review === undefined){
@@ -652,6 +661,24 @@ static unSetFavorite(id) {
     return tx.complete;
      });
   }
+
+  /**
+   * Add offline review.
+   */
+  static postReviewToIDB(review) {
+     
+       return DBHelper.OpenIndexDB().then(db => {
+        if (!db) return;
+        const tx = db.transaction('reviews', 'readwrite');
+        const store = tx.objectStore('reviews');
+        store.put(review);
+        return tx.complete;
+         });
+
+
+  
+}
+
 
 
   /**
@@ -673,19 +700,22 @@ static unSetFavorite(id) {
   /**
    * Get offline review.
    */
-  static fetchOfflineReviews(id) {
+  static fetchOfflineReviews() {
     return DBHelper.OpenIndexDB().then(db => {
     //if we showing posts or very first time of the page loading.
     //we don't need to go to idb
     if (!db) return;
 
-    const tx = db.transaction('offlineReviews');
+    const tx = db.transaction('offlineReviews', 'readonly');
     const store = tx.objectStore('offlineReviews');
     const index = store.index('restaurant_id', 'date');
-
-    return index.getAll(id);
+    return store.getAll();
   });
-  }
+
+
+
+
+  } 
   /**
    * Delete offline review from IDB.
    */
@@ -718,25 +748,25 @@ static unSetFavorite(id) {
    */
   static  postReviewToServer(data, callback) {
    
+      // Setup the request
+        var headers = new Headers();
+        // Set some Headers
+        headers.set('Accept', 'application/json');
+
        fetch(`${DBHelper.DATABASE_URL}/reviews`, {
         method: 'POST',
+        headers,
         body: JSON.stringify(data),
       })
       .then(response => response.json())
       .then(data => callback(null, data))
       .catch(err => {
-        // We are offline...
-        //save to IDB
-         DBHelper.addOfflineReview(data)
-        //diplay error message
-       // .then(showMessage('offline'))
-        // register a sync
-        .then(navigator.serviceWorker.ready)
-          .then((reg) => {
-            return reg.sync.register('syncReviews');
-          })
-          .catch((err) => console.log(err));
-        callback(err, null);
+        console.log('We are offline...');
+        DBHelper.addOfflineReview(data)
+        .then( callback(err, null))
+        .catch( error => console.log(error, 'problem saving to offlineReviews'));
+   
+        
       });
 }
 static fetchReviewsById(id, callback) {
@@ -760,5 +790,95 @@ static fetchReviewsById(id, callback) {
       }
     }
     
-     
+   
+  static processQueue(){
+ 
+
+  // Get Data from indexedDB
+
+  DBHelper.fetchOfflineReviews()
+
+ 
+  // Post data to server
+  
+  .then(data => {// Setup the request
+    console.log(data);
+        var headers = new Headers();
+        // Set some Headers
+        headers.set('Accept', 'application/json');
+
+       fetch(`${DBHelper.DATABASE_URL}/reviews`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+      });
+     })
+      .then(response => response.json())
+    // If Post succeeds, delete data from IndexedDB
+   
+    .then(data => removeOfflineReviewFromIDB(data.review_id))
+    .then( console.log('donegh'))}
+
+
+
+  static processQueuen() {
+  // Open offline queue & return cursor
+  const report = DBHelper.fetchOfflineReviews();
+  console.log(report);
+    return DBHelper.OpenIndexDB().then(db => {
+      if (!db) return;
+      const tx = db.transaction(['offlineReviews'], 'readwrite');
+      const store = tx.objectStore('offlineReviews');
+      return store.openCursor();
+    })
+      .then(function nextRequest (cursor) {
+        if (!cursor) {
+          console.log('cursor done.');
+          return;
+        }
+          console.log('cursor', cursor.value.data.name, cursor.value.data);
+        console.log('cursor.value', cursor.value);
+
+        const offline_key = cursor.key;
+       // const url = cursor.value.url;
+        const url = `${DBHelper.DATABASE_URL}/reviews`;
+        const headers = cursor.value.headers;
+        const method = cursor.value.method;
+        const data = cursor.value.data;
+        const review_key = cursor.value.review_key;
+        // const body = data ? JSON.stringify(data) : '';
+        const body = data;
+
+        // update server with HTTP POST request & get updated record back        
+        fetch(url, {
+          headers: headers,
+          method: method,
+          body: body
+        })
+          .then(response => response.json())
+          .then(data => {
+            // data is the returned record
+            console.log('Received updated record from DB Server', data);
+
+            // 1. Delete http request record from offline store
+           return DBHelper.OpenIndexDB().then(db => {
+              const tx = db.transaction(['offlineReviews'], 'readwrite');
+              tx.objectStore('offlineReviews').delete(offline_key);
+              return tx.complete;
+            })
+             
+              .then(() => console.log('offline rec delete success!'))
+              .catch(err => console.log('offline store error', err));
+            
+          }).catch(err => {
+            console.log('fetch error. we are offline.');
+            console.log(err);
+            return;
+          });
+        return cursor.continue().then(nextRequest);
+      })
+      .then(() => console.log('Done cursoring'))
+      .catch(err => console.log('Error opening cursor', err));
+  }
+
 }
