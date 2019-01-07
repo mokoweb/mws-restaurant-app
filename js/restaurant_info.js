@@ -253,9 +253,9 @@ addReviewForm = (review) => {
 
         form.reset();
       }
-      createReviewHTML(reviewObject, true);
-    }));
      
+    }));
+      // createReviewHTML(reviewObject, true);
         }//validation
       }//button click
 

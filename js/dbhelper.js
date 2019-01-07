@@ -791,7 +791,7 @@ static fetchReviewsById(id, callback) {
     }
     
    
-  static processQueue(){
+  static processQueuen(){
  
 
   // Get Data from indexedDB
@@ -824,39 +824,40 @@ if(data){
 });
 }
 }
-  static processQueuen() {
+
+ 
+  static processQueue() {
   // Open offline queue & return cursor
-  const report = DBHelper.fetchOfflineReviews();
-  console.log(report);
+ 
+ 
     return DBHelper.OpenIndexDB().then(db => {
       if (!db) return;
       const tx = db.transaction(['offlineReviews'], 'readwrite');
       const store = tx.objectStore('offlineReviews');
       return store.openCursor();
     })
-      .then(function nextRequest (cursor) {
+      .then((event)=> {
+        var cursor = event.target.result;
         if (!cursor) {
           console.log('cursor done.');
           return;
         }
-          console.log('cursor', cursor.value.data.name, cursor.value.data);
-        console.log('cursor.value', cursor.value);
+          console.log('cursor', cursor.value.review_id);
+        console.log('cursor.value', cursor.key);
 
         const offline_key = cursor.key;
        // const url = cursor.value.url;
         const url = `${DBHelper.DATABASE_URL}/reviews`;
         const headers = cursor.value.headers;
         const method = cursor.value.method;
-        const data = cursor.value.data;
-        const review_key = cursor.value.review_key;
-        // const body = data ? JSON.stringify(data) : '';
-        const body = data;
+        const body = cursor.value.data;
+        const review_key = cursor.value.review_id;
 
         // update server with HTTP POST request & get updated record back        
         fetch(url, {
           headers: headers,
           method: method,
-          body: body
+          body: JSON.stringify(body)
         })
           .then(response => response.json())
           .then(data => {
@@ -878,7 +879,7 @@ if(data){
             console.log(err);
             return;
           });
-        return cursor.continue().then(nextRequest);
+        return cursor.continue().then(event);
       })
       .then(() => console.log('Done cursoring'))
       .catch(err => console.log('Error opening cursor', err));
