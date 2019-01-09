@@ -79,8 +79,11 @@ fetchRestaurantFromURL = (callback) => {
 /**
  * Create restaurant HTML and add it to the webpage
  */
-fillRestaurantHTML = (restaurant = self.restaurant) => {
-  
+
+ const fillRestaurantHTML = (restaurant = self.restaurant) => {
+
+  const favorite = document.getElementById('restaurant-fav');
+   
   const name = document.getElementById('restaurant-name');
   name.innerHTML = restaurant.name;
 
@@ -93,12 +96,10 @@ const favBtn = document.createElement('button');
   if (restaurant.is_favorite === 'true') {
     favBtn.classList.add('active');
     favBtn.setAttribute('aria-pressed', 'true');
-    //favBtn.innerHTML = `Click To Remove ${restaurant.name} as a Favorite`;
     favBtn.title = `Click To Remove ${restaurant.name} as a Favorite`;
   } else {
     favBtn.setAttribute('aria-pressed', 'false');
-    //favBtn.innerHTML = `Click To Add ${restaurant.name} as a Favorite`;
-    favBtn.title = `Click To Add ${restaurant.name} as a favorite`;
+     favBtn.title = `Click To Add ${restaurant.name} as a favorite`;
   }
 
   //add a listener to the FavBtn
@@ -106,17 +107,16 @@ const favBtn = document.createElement('button');
     evt.preventDefault();
     if (favBtn.classList.contains('active')) {
       favBtn.setAttribute('aria-pressed', 'false');
-      //favBtn.innerHTML = `Click To Add ${restaurant.name} as a favorite`;
-      favBtn.title = `Click To Add ${restaurant.name} as a favorite`;
+     favBtn.title = `Click To Add ${restaurant.name} as a favorite`;
       DBHelper.unSetFavorite(restaurant.id);
     } else {
       favBtn.setAttribute('aria-pressed', 'true');
-      //favBtn.innerHTML = `Click To Remove ${restaurant.name} as a favorite`;
-      favBtn.title = `Click To Remove ${restaurant.name} as a favorite`;
+       favBtn.title = `Click To Remove ${restaurant.name} as a favorite`;
       DBHelper.setFavorite(restaurant.id);
     }
     favBtn.classList.toggle('active');
   });
+  favorite.appendChild(favBtn);
 
   const image = document.getElementById('restaurant-img');
   image.className = 'restaurant-img'
@@ -135,7 +135,9 @@ const favBtn = document.createElement('button');
   DBHelper.fetchReviewsById(restaurant.id, fillReviewsHTML);
 }
 
-
+window.addEventListener('online', function () {
+  DBHelper.processQueue();
+});
 /**
  * Create restaurant operating hours HTML table and add it to the webpage.
  */
