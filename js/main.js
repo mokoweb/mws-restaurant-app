@@ -1,38 +1,44 @@
-
-
 let restaurants,
   neighborhoods,
   cuisines
 var newMap
 var markers = []
 
+
+// REGISTER SERVICE WORKER
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log(`[SERVICE WORKER] Registered successfully! Scope: ${registration.scope}`);
+      })
+      .catch(error => {
+        console.log(`[SERVICE WORKER] Registration failed: ${error}`);
+      });
+  });
+}
+
 /**
  * Fetch neighborhoods and cuisines as soon as the page is loaded.
  */
-document.addEventListener('DOMContentLoaded', (event) => {
-  initMap(); // added 
+document.addEventListener('DOMContentLoaded', event => {
+  initMap(); 
   fetchNeighborhoods();
   fetchCuisines();
-  registerServiceWorker();
-  processQueue();
+  
 });
 
 /**
  * Fetch all neighborhoods and set their HTML.
  */
 fetchNeighborhoods = () => {
-  DBHelper.fetchNeighborhoods((error, neighborhoods) => {
-    if (error) { // Got an error
-     // console.error("I am here", error);
-    } else {
+  DBHelper.fetchNeighborhoods()
+    .then(neighborhoods => {
       self.neighborhoods = neighborhoods;
       fillNeighborhoodsHTML();
-    }
-  });
+    });
 }
 
-processQueue = () =>{ 
-  window.addEventListener('online', DBHelper.processQueue());}
 /**
  * Set neighborhoods HTML.
  */
@@ -50,14 +56,11 @@ fillNeighborhoodsHTML = (neighborhoods = self.neighborhoods) => {
  * Fetch all cuisines and set their HTML.
  */
 fetchCuisines = () => {
-  DBHelper.fetchCuisines((error, cuisines) => {
-    if (error) { // Got an error!
-      console.error(error);
-    } else {
+  DBHelper.fetchCuisines()
+    .then(cuisines => {
       self.cuisines = cuisines;
       fillCuisinesHTML();
-    }
-  });
+    });
 }
 
 /**
@@ -94,19 +97,6 @@ initMap = () => {
 
   updateRestaurants();
 }
-/* window.initMap = () => {
-  let loc = {
-    lat: 40.722216,
-    lng: -73.987501
-  };
-  self.map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 12,
-    center: loc,
-    scrollwheel: false
-  });
-  updateRestaurants();
-} */
-
 /**
  * Update page and map for current restaurants.
  */
@@ -120,14 +110,11 @@ updateRestaurants = () => {
   const cuisine = cSelect[cIndex].value;
   const neighborhood = nSelect[nIndex].value;
 
-  DBHelper.fetchRestaurantByCuisineAndNeighborhood(cuisine, neighborhood, (error, restaurants) => {
-    if (error) { // Got an error!
-      console.error(error);
-    } else {
+  DBHelper.fetchRestaurantByCuisineAndNeighborhood(cuisine, neighborhood)
+    .then(restaurants => {
       resetRestaurants(restaurants);
       fillRestaurantsHTML();
-    }
-  })
+    })
 }
 
 /**
@@ -163,8 +150,8 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
  */
 createRestaurantHTML = (restaurant) => {
   const li = document.createElement('li');
-
-  const favBtn = document.createElement('button');
+  
+const favBtn = document.createElement('button');
   favBtn.className = 'fas fa-heart';
   favBtn.setAttribute('aria-label', 'favorite');
   if (restaurant.is_favorite === 'true') {
@@ -196,13 +183,38 @@ createRestaurantHTML = (restaurant) => {
   });
   li.append(favBtn);
 
+  // LAZY LOADING IMAGES
   const image = document.createElement('img');
-  image.className = 'restaurant-img';
-  image.src = DBHelper.imageUrlForRestaurant(restaurant);
-  image.alt = `image of ${restaurant.name}`;
+  image.alt = `image of ${restaurant.name} restaurant`;
+  const config = {
+    threshold: 0.1
+  };
+
+  let observer;
+  if ('IntersectionObserver' in window) {
+    observer = new IntersectionObserver(onChange, config);
+    observer.observe(image);
+  } else {
+    console.log('Intersection Observers not supported', 'color: red');
+    loadImage(image);
+  }
+  const loadImage = image => {
+    image.className = 'restaurant-img';
+    image.src = DBHelper.imageUrlForRestaurant(restaurant);
+  }
+
+  function onChange(changes, observer) {
+    changes.forEach(change => {
+      if (change.intersectionRatio > 0) {
+        loadImage(change.target);
+        observer.unobserve(change.target);
+      }
+    });
+  }
+
   li.append(image);
 
-  const name = document.createElement('h2');
+   const name = document.createElement('h2');
   name.innerHTML = restaurant.name;
   li.append(name);
 
@@ -221,8 +233,7 @@ createRestaurantHTML = (restaurant) => {
 
   return li
 }
-
-
+//window.addEventListener('online', (event) => DBHelper.processQueue());
 /**
  * Add markers for current restaurants to the map.
  */
@@ -231,76 +242,10 @@ addMarkersToMap = (restaurants = self.restaurants) => {
     // Add marker to the map
     const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.newMap);
     marker.on("click", onClick);
+
     function onClick() {
       window.location.href = marker.options.url;
     }
     self.markers.push(marker);
   });
-
-} 
-/* addMarkersToMap = (restaurants = self.restaurants) => {
-  restaurants.forEach(restaurant => {
-    // Add marker to the map
-    const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.map);
-    google.maps.event.addListener(marker, 'click', () => {
-      window.location.href = marker.url
-    });
-    self.markers.push(marker);
-  });
-} */
-
-/**
- * Service worker functions below **/
- 
-registerServiceWorker = ()=>{
-  if (!navigator.serviceWorker) return;
-
-  navigator.serviceWorker.register('/sw.js').then((reg)=> {
-    if (!navigator.serviceWorker.controller) {
-      return;
-    }
-
-    if (reg.waiting) {
-      console.log('[ServiceWorker] is waiting - call update sw');
-      updateWorker(reg.waiting);
-      return;
-    }
-
-    if (reg.installing) {
-      console.log('[ServiceWorker] is installing - call to track Installing sw');
-      trackInstalling(reg.installing);
-      return;
-    }
-
-    reg.addEventListener('updatefound', ()=> {
-      console.log('[ServiceWorker] is installing - call to track Installing sw');
-      trackInstalling(reg.installing);
-    });
-  });
-};
-
-trackInstalling = (worker)=> {
-  worker.addEventListener('statechange', function() {
-    console.log('[ServiceWorker] statechange -trackInstalling');
-    if (worker.state == 'installed') {
-      updateWorker(worker);
-    }
-  });
-};
-updateWorker = (worker)=> {
-  console.log('[ServiceWorker] action to update worker called -skipWaiting');
-  worker.postMessage({action: 'skipWaiting'});
-};
-
-
-/**
- * Helper to get the base url for routes and assets 
-const getBaseUrl = () => {
-    let baseUrl = window.location.origin;
-    if (window.location.pathname.includes(config.ghPagesName)) baseUrl += 'https://mokoweb.github.io/restaurant-app/data/restaurants.json';
-
-    return baseUrl;
-}  */
-
-//for indexDB
-  //for indexDB
+}

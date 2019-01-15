@@ -4,7 +4,7 @@ var newMap;
 /**
  * Initialize map as soon as the page is loaded.
  */
-document.addEventListener('DOMContentLoaded', (event) => {  
+document.addEventListener('DOMContentLoaded', () => {
   initMap();
 });
 
@@ -12,10 +12,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
  * Initialize leaflet map
  */
 initMap = () => {
-  fetchRestaurantFromURL((error, restaurant) => {
-    if (error) { // Got an error!
-      console.error(error);
-    } else {      
+  fetchRestaurantFromURL()
+    .then((restaurant) => {
       self.newMap = L.map('map', {
         center: [restaurant.latlng.lat, restaurant.latlng.lng],
         zoom: 16,
@@ -27,96 +25,51 @@ initMap = () => {
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
           '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
           'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-        id: 'mapbox.streets'    
+        id: 'mapbox.streets' 
       }).addTo(newMap);
       fillBreadcrumb();
       DBHelper.mapMarkerForRestaurant(self.restaurant, self.newMap);
-    }
-  });
-}  
- 
-/* window.initMap = () => {
-  fetchRestaurantFromURL((error, restaurant) => {
-    if (error) { // Got an error!
-      console.error(error);
-    } else {
-      self.map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 16,
-        center: restaurant.latlng,
-        scrollwheel: false
-      });
-      fillBreadcrumb();
-      DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
-    }
-  });
-} */
+    })
+    .catch(error => console.error(error));
+}
+
 
 /**
- * Get current restaurant from page URL.
+ * Create restaurant operating hours HTML table and add it to the webpage.
  */
-fetchRestaurantFromURL = (callback) => {
+fetchRestaurantFromURL = () => {
   if (self.restaurant) { // restaurant already fetched!
-    callback(null, self.restaurant)
-    return;
+    return Promise.resolve(self.restaurant);
   }
-  const id = getParameterByName('id');
-  if (!id) { // no id found in URL
-    error = 'No restaurant id in URL'
-    callback(error, null);
+  const id = parseInt(getParameterByName('id'));
+  if (!id || id === NaN) { // no id found in URL
+    return Promise.reject('No restaurant id in URL')
   } else {
-    DBHelper.fetchRestaurantById(id, (error, restaurant) => {
-      self.restaurant = restaurant;
-      if (!restaurant) {
-        console.error(error);
-        return;
-      }
-      fillRestaurantHTML();
-      callback(null, restaurant)
-    });
+    return DBHelper.fetchRestaurantById(id)
+      .then(restaurant => {
+        if (!restaurant) {
+          return Promise.reject(`Restaurant with ID ${id} was not found`)
+        }
+        self.restaurant = restaurant;
+        fillRestaurantHTML();
+        return restaurant;
+      });
   }
 }
 
 /**
  * Create restaurant HTML and add it to the webpage
  */
-
- const fillRestaurantHTML = (restaurant = self.restaurant) => {
-
-  const favorite = document.getElementById('restaurant-fav');
-   
+fillRestaurantHTML = (restaurant = self.restaurant) => {
   const name = document.getElementById('restaurant-name');
   name.innerHTML = restaurant.name;
 
   const address = document.getElementById('restaurant-address');
   address.innerHTML = restaurant.address;
-
-const favBtn = document.createElement('button');
+  // Create favorite icon
+  const favBtn = document.createElement('button');
   favBtn.className = 'fas fa-heart';
-  favBtn.setAttribute('aria-label', 'favorite');
-  if (restaurant.is_favorite === 'true') {
-    favBtn.classList.add('active');
-    favBtn.setAttribute('aria-pressed', 'true');
-    favBtn.title = `Click To Remove ${restaurant.name} as a Favorite`;
-  } else {
-    favBtn.setAttribute('aria-pressed', 'false');
-     favBtn.title = `Click To Add ${restaurant.name} as a favorite`;
-  }
-
-  //add a listener to the FavBtn
-  favBtn.addEventListener('click', (evt) => {
-    evt.preventDefault();
-    if (favBtn.classList.contains('active')) {
-      favBtn.setAttribute('aria-pressed', 'false');
-     favBtn.title = `Click To Add ${restaurant.name} as a favorite`;
-      DBHelper.unSetFavorite(restaurant.id);
-    } else {
-      favBtn.setAttribute('aria-pressed', 'true');
-       favBtn.title = `Click To Remove ${restaurant.name} as a favorite`;
-      DBHelper.setFavorite(restaurant.id);
-    }
-    favBtn.classList.toggle('active');
-  });
-  favorite.appendChild(favBtn);
+  favBtn.setAttribute('aria-label', 'favorite'); 
 
   const image = document.getElementById('restaurant-img');
   image.className = 'restaurant-img'
@@ -126,18 +79,16 @@ const favBtn = document.createElement('button');
   const cuisine = document.getElementById('restaurant-cuisine');
   cuisine.innerHTML = restaurant.cuisine_type;
 
+
   // fill operating hours
   if (restaurant.operating_hours) {
     fillRestaurantHoursHTML();
   }
-  // fill reviews
-  //fillReviewsHTML();
-  DBHelper.fetchReviewsById(restaurant.id, fillReviewsHTML);
-}
 
-window.addEventListener('online', function () {
-  DBHelper.processQueue();
-});
+  // fill reviews
+  DBHelper.fetchReviewsByRestId(restaurant.id)
+    .then(reviews => fillReviewsHTML(reviews));
+}
 /**
  * Create restaurant operating hours HTML table and add it to the webpage.
  */
@@ -158,169 +109,74 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
   }
 }
 
+
 /**
  * Create all reviews HTML and add them to the webpage.
  */
-const fillReviewsHTML = (error, reviews) => {
-  self.restaurant.reviews = reviews;
-
-  if (error) {
-    console.log('Error retrieving reviews', error);
-  }
-
-   //add review button
-  //<button class="btn btn-success btn-lg btn-block" data-toggle="modal" data-target="#myModal">
-  const header = document.getElementById('reviews-header');
-  const addReview = document.createElement('button');
-  addReview.classList.add('btn', 'btn-success');
-  addReview.innerHTML = 'Add a Review'; 
-  addReview.setAttribute('data-toggle', 'modal');
-  addReview.setAttribute('data-target', '#myModal');
-  addReview.setAttribute('aria-label', 'add review');
-  addReview.title = 'Click To Add a Review';
-  //addReview.addEventListener('click', modal);
-  header.appendChild(addReview);
+fillReviewsHTML = (reviews = self.restaurant.reviews) => {
   const container = document.getElementById('reviews-container');
+  const ul = document.getElementById('reviews-list');
   const title = document.createElement('h3');
-  title.className = 'review-title';
+  title.className = 'reviews-title'
   title.innerHTML = 'Reviews';
-  container.appendChild(title);
+  container.insertBefore(title, ul);
 
+  // Add review button
+ 
+  // Add review button
+  const addReview = document.createElement('button');
+  addReview.textContent = 'Add review';
+  addReview.setAttribute('type', 'button');
+  addReview.classList.add ('btn', 'btn-dark');
+  addReview.setAttribute('id', 'add-review');
+  addReview.onclick = (event) => openModal();
+  container.appendChild(addReview);
+
+  // TODO: test with no reviews.
   if (!reviews) {
     const noReviews = document.createElement('p');
-    noReviews.innerHTML = 'No reviews yet!';
-    container.appendChild(noReviews);
+    noReviews.textContent = 'No reviews yet!';
+    ul.append(noReviews);
     return;
   }
-  const ul = document.getElementById('reviews-list');
+
   reviews.forEach(review => {
     ul.appendChild(createReviewHTML(review));
   });
   container.appendChild(ul);
 }
 
-
-/*
-Add Reviews Form
-*/
-addReviewForm = (review) => {
-  const form = document.createElement('form');
-  const name = document.createElement('input');
-  name.setAttribute('class', 'name');
-  name.setAttribute('type', 'text');
-  name.setAttribute('placeholder', 'Input your name..');
-  form.appendChild(name);
-
-  const rating = document.createElement('input');
-  rating.setAttribute('class', 'rating');
-  rating.setAttribute('type', 'number');
-  rating.setAttribute('placeholder', 'Number From 1 - 5');
-  form.appendChild(rating);
-
-  const reviewBody = document.createElement('textarea');
-  reviewBody.setAttribute('class', 'review-body');
-  reviewBody.setAttribute('type', 'text');
-  reviewBody.setAttribute('placeholder', 'Input Your Review');
-  form.appendChild(reviewBody);
-  buttonClick = (event) => {
-    event.preventDefault();
-      let reviewObject = {
-          "restaurant_id": self.restaurant.id,
-          "name": name.value,
-          "createdAt": (new Date()).getTime(),
-          "updatedAt": (new Date()).getTime(),
-          "rating": parseInt(rating.value),
-          "comments": reviewBody.value 
-        }
-    
-    //validation
-        if((reviewObject.rating < 0 ) || (reviewObject.rating > 5) ||
-          (reviewObject.name === "") || (reviewObject.rating === "") || 
-          (reviewObject.comments === "")){
-         window.alert(`Your rating must be a value from 1 to 5, all fields are required.`)
-        }else{
-      
-      // Make the request
-        console.log(reviewObject);
-         //save to OfflineDB
-         DBHelper.postReviewToIDB(reviewObject)
-      .then(DBHelper.postReviewToServer(reviewObject, (error, review) => {
-     
-        if (error) {
-        console.log('We are offline. Review has been saved to the queue.');
-        //diplay error message
-      } else {
-        //show success alert
-      showMessage('online');
-
-        form.reset();
-      }
-     
-    }));
-      // createReviewHTML(reviewObject, true);
-        }//validation
-      }//button click
-
- 
-        
-
-
-  const reviewButton = document.createElement('button');
-  reviewButton.setAttribute('class', 'review-button');
-  reviewButton.addEventListener("click", buttonClick);
-  reviewButton.innerHTML = "Submit Review";
-  form.appendChild(reviewButton);
-
-  const showMessage = (message) => { 
-  const successMessage = document.createElement('h4');
-  successMessage.setAttribute("class", "heading");
-  successMessage.innerHTML = message;
-  successMessage.style.display = "block"
-  form.appendChild(successMessage);
-
-  setTimeout(()=>{
-          successMessage.style.display = "none";
-        }, 4000);
-
-        form.reset();
-
-  }
-
-  
-  return form;
-  
-}
-  const modal = document.getElementById('modal-body');
-    modal.appendChild(addReviewForm());
-
-  
 /**
  * Create review HTML and add it to the webpage.
+ *
+ * https://developer.mozilla.org/en-US/docs/Web/API/ParentNode/append
+ * https://developer.mozilla.org/en-US/docs/Web/API/Node/appendChild
  */
+
 createReviewHTML = (review) => {
- 	const li = document.createElement('li');
+  const li = document.createElement('li');
 
- 	const header = document.createElement('div');
- 	header.className = 'header-review';
- 	li.appendChild(header);
+  const header = document.createElement('div');
+  header.className = 'header-review';
+  li.appendChild(header);
 
- 	const name = document.createElement('span');
- 	name.className = 'name-review';
- 	name.innerHTML = review.name;
- 	header.appendChild(name);
+  const name = document.createElement('span');
+  name.className = 'name-review';
+  name.innerHTML = review.name;
+  header.appendChild(name);
  
- 	const date = document.createElement('span');
- 	const updatedDate = new Date(review.updatedAt).toLocaleDateString();
-  date.innerHTML = ` | ${updatedDate}`; 
- 	header.appendChild(date);
+  const date = document.createElement('span');
+  const updatedDate = new Date(review.updatedAt).toLocaleDateString();
+  date.innerHTML = `<span style="float: right;">  | ${updatedDate} </span>`; 
+  header.appendChild(date);
 
- 	const body = document.createElement('div');
- 	body.className = 'review-body';
- 	li.appendChild(body);
+  const body = document.createElement('div');
+  body.className = 'review-body';
+  li.appendChild(body);
 
- 	
-	
-	 // I got his star rating function online and customized it
+  
+  
+   // I got his star rating function online and customized it
   const ratings = document.createElement('div');
 
   for (let i = 1; i <= 5; i++) {
@@ -333,16 +189,15 @@ createReviewHTML = (review) => {
     ratings.appendChild(rating);
   }
  body.appendChild(ratings);
-	
-	
+  
+  
 
- 	const comments = document.createElement('p');
- 	comments.innerHTML = review.comments;
- 	body.appendChild(comments);
+  const comments = document.createElement('p');
+  comments.innerHTML = review.comments;
+  body.appendChild(comments);
 
- 	return li;
+  return li;
 };
-
 
 /**
  * Add restaurant name to the breadcrumb navigation menu
@@ -369,3 +224,70 @@ getParameterByName = (name, url) => {
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 };
+
+
+/**
+ * Add review.
+ */
+
+// Form validation & submission
+addReview = () => {
+  event.preventDefault();
+  // Getting the data from the modal form
+  const restaurantId = self.restaurant.id;
+  let reviewAuthor = document.getElementById('name').value;
+  let reviewRating = document.querySelector('#rating option:checked').value;
+  let reviewComment = document.getElementById('comment').value;
+
+  // Close Modal
+  closeModal();
+
+  // Add data to DOM
+  const ReviewObject = {
+    "restaurant_id": parseInt(restaurantId),
+    "name": reviewAuthor,
+    "rating": parseInt(reviewRating),
+    "comments": reviewComment,
+    "createdAt": (new Date()).getTime()
+  };
+  // post review
+  DBHelper.postReview(ReviewObject);
+  addReviewHTML(ReviewObject);
+  document.getElementById('review-form').reset();
+}
+
+addReviewHTML = (review) => {
+  if (document.getElementById('no-review')) {
+    document.getElementById('no-review').remove();
+  }
+  const container = document.getElementById('reviews-container');
+  const ul = document.getElementById('reviews-list');
+
+  //insert the new review on top
+  ul.insertBefore(createReviewHTML(review), ul.firstChild);
+  container.appendChild(ul);
+}
+
+/**
+ * Handle modal actions.
+ */
+const modal = document.getElementById('reviewModal');
+const closeModalBtn = document.getElementById('closeBtn');
+
+closeModalBtn.addEventListener('click', closeModal);
+window.addEventListener('click', close);
+
+function openModal() {
+  modal.style.display = 'block';
+  document.getElementById('addReview').addEventListener('click', addReview);
+}
+
+function closeModal() {
+  modal.style.display = 'none';
+}
+
+function close(ev) {
+  if (ev.target == modal) {
+    closeModal();
+  }
+}
