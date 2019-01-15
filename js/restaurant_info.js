@@ -71,6 +71,14 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   favBtn.className = 'fas fa-heart';
   favBtn.setAttribute('aria-label', 'favorite'); 
 
+   if (restaurant.is_favorite === 'true') {
+    favBtn.classList.add('active');
+    favBtn.setAttribute('aria-pressed', 'true'); 
+    favBtn.title = `Click To Remove ${restaurant.name} as a Favorite`;
+  } else {
+    favBtn.setAttribute('aria-pressed', 'false'); 
+    favBtn.title = `Click To Add ${restaurant.name} as a favorite`;
+  }
   const image = document.getElementById('restaurant-img');
   image.className = 'restaurant-img'
   image.alt =  `image of ${restaurant.name}`;
