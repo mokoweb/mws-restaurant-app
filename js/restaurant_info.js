@@ -72,7 +72,7 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   favBtn.setAttribute('aria-label', 'favorite'); 
 
 
-   if ((/true/i).test(restaurant.is_favorite)) {
+   if ( (restaurant.is_favorite) === true) {
     favBtn.classList.add('active');
     favBtn.setAttribute('aria-pressed', 'true'); 
     favBtn.title = `Click To Remove ${restaurant.name} as a Favorite`;
