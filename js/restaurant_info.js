@@ -71,7 +71,8 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   favBtn.className = 'fas fa-heart';
   favBtn.setAttribute('aria-label', 'favorite'); 
 
-   if (restaurant.is_favorite === 'true') {
+
+   if ((/true/i).test(restaurant.is_favorite)) {
     favBtn.classList.add('active');
     favBtn.setAttribute('aria-pressed', 'true'); 
     favBtn.title = `Click To Remove ${restaurant.name} as a Favorite`;
@@ -79,6 +80,24 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
     favBtn.setAttribute('aria-pressed', 'false'); 
     favBtn.title = `Click To Add ${restaurant.name} as a favorite`;
   }
+  
+   //add a listener to the FavBtn
+  favBtn.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    if (favBtn.classList.contains('active')) {
+      favBtn.setAttribute('aria-pressed', 'false');
+      //favBtn.innerHTML = `Click To Add ${restaurant.name} as a favorite`;
+      favBtn.title = `Click To Add ${restaurant.name} as a favorite`;
+      DBHelper.unSetFavorite(restaurant.id);
+    } else {
+      favBtn.setAttribute('aria-pressed', 'true');
+      //favBtn.innerHTML = `Click To Remove ${restaurant.name} as a favorite`;
+      favBtn.title = `Click To Remove ${restaurant.name} as a favorite`;
+      DBHelper.setFavorite(restaurant.id);
+    }
+    favBtn.classList.toggle('active');
+  });
+
   const image = document.getElementById('restaurant-img');
   image.className = 'restaurant-img'
   image.alt =  `image of ${restaurant.name}`;
