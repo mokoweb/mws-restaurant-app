@@ -130,16 +130,13 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
   container.insertBefore(title, ul);
 
   // Add review button
- 
-  // Add review button
   const addReview = document.createElement('button');
   addReview.textContent = 'Add review';
   addReview.setAttribute('type', 'button');
-  addReview.classList.add ('btn', 'btn-dark');
+  addReview.setAttribute('class', 'btn');
   addReview.setAttribute('id', 'add-review');
   addReview.onclick = (event) => openModal();
   container.appendChild(addReview);
-
   // TODO: test with no reviews.
   if (!reviews) {
     const noReviews = document.createElement('p');
